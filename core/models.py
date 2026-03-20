@@ -3,6 +3,7 @@ from django.db import models
 
 
 class CustomUser(AbstractUser):
+    """Django-пользователь для авторизации (admin/worker)"""
     ROLE_CHOICES = [
         ('admin', 'Администратор'),
         ('worker', 'Работник'),
@@ -15,36 +16,78 @@ class CustomUser(AbstractUser):
         ('upholstery', 'Обивщик'),
         ('none', 'Без специализации'),
     ]
-
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='worker')
     specialization = models.CharField(
-        max_length=20,
-        choices=SPECIALIZATION_CHOICES,
-        default='none',
-        verbose_name="Специализация"
+        max_length=20, choices=SPECIALIZATION_CHOICES,
+        default='none', verbose_name="Специализация"
     )
 
     class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
+        verbose_name = "Аккаунт"
+        verbose_name_plural = "Аккаунты"
 
     def __str__(self):
-        full_name = self.get_full_name() or self.username
-        return f"{full_name} — {self.get_role_display()} ({self.get_specialization_display()})"
+        return f"{self.username} ({self.get_role_display()})"
+
+
+# ──────────────────────────────────────────────
+# Таблица users (сотрудники/контактные лица)
+# ──────────────────────────────────────────────
+
+class Role(models.Model):
+    """roles"""
+    name = models.CharField(max_length=100, verbose_name="Название роли")
+
+    class Meta:
+        verbose_name = "Роль"
+        verbose_name_plural = "Роли"
+
+    def __str__(self):
+        return self.name
+
+
+class Person(models.Model):
+    """users — сотрудники цеха (не Django-логин, а бизнес-запись)"""
+    full_name = models.CharField(max_length=255, verbose_name="ФИО")
+    phone = models.CharField(max_length=50, blank=True, verbose_name="Телефон")
+    roles = models.ManyToManyField(
+        Role,
+        through='PersonRole',
+        verbose_name="Роли"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Сотрудник"
+        verbose_name_plural = "Сотрудники"
+
+    def __str__(self):
+        return self.full_name
+
+
+class PersonRole(models.Model):
+    """user_roles — связь many-to-many"""
+    person = models.ForeignKey(Person, on_delete=models.CASCADE)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('person', 'role')
+        verbose_name = "Роль сотрудника"
+        verbose_name_plural = "Роли сотрудников"
 
 
 class Production(models.Model):
-    STATUS_CHOICES = [
-        ('started', 'В работе'),
-        ('completed', 'Завершено'),
-    ]
-    product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT, verbose_name="Изделие")
-    deadline = models.DateField(
-        verbose_name="Дедлайн (только админ)",
-        null=True,  # ← добавили
-        blank=True  # ← добавили
+    """production"""
+    product = models.ForeignKey(
+        'inventory.Product',
+        on_delete=models.PROTECT,
+        verbose_name="Изделие"
     )
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='started')
+    person = models.ForeignKey(
+        Person,
+        on_delete=models.PROTECT,
+        verbose_name="Ответственный сотрудник"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -52,10 +95,11 @@ class Production(models.Model):
         verbose_name_plural = "Производства"
 
     def __str__(self):
-        return f"{self.product.name} (до {self.deadline})"
+        return f"{self.product.name} / {self.person.full_name}"
 
 
 class ProductionStage(models.Model):
+    """Этапы производства (каркас → поролон → обивка и т.д.)"""
     STAGE_CHOICES = [
         ('frame', 'Каркас'),
         ('springs', 'Пружины / Механизмы'),
@@ -63,27 +107,19 @@ class ProductionStage(models.Model):
         ('foam', 'Поролон'),
         ('upholstery', 'Обивка'),
     ]
-
-    production = models.ForeignKey(Production, on_delete=models.CASCADE, related_name='stages')
-    stage_type = models.CharField(max_length=20, choices=STAGE_CHOICES, verbose_name="Этап")
-
-    # Дефолтный + возможность замены админом
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает'),
+        ('in_progress', 'В работе'),
+        ('completed', 'Завершено'),
+    ]
+    production = models.ForeignKey(
+        Production, on_delete=models.CASCADE, related_name='stages'
+    )
+    stage_type = models.CharField(max_length=20, choices=STAGE_CHOICES)
     assigned_worker = models.ForeignKey(
-        CustomUser,
-        on_delete=models.PROTECT,
-        limit_choices_to={'role': 'worker'},
-        verbose_name="Назначенный работник (админ может заменить)"
+        Person, on_delete=models.PROTECT, verbose_name="Назначенный работник"
     )
-
-    status = models.CharField(
-        max_length=15,
-        choices=[
-            ('pending', 'Ожидает'),
-            ('in_progress', 'В работе'),
-            ('completed', 'Завершено')
-        ],
-        default='pending'
-    )
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
@@ -93,5 +129,4 @@ class ProductionStage(models.Model):
         ordering = ['production', 'stage_type']
 
     def __str__(self):
-        worker_name = self.assigned_worker.get_full_name() or self.assigned_worker.username
-        return f"{self.get_stage_type_display()} — {worker_name}"
+        return f"{self.production} — {self.get_stage_type_display()}"

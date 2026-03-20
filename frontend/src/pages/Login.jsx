@@ -1,47 +1,97 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+export default function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+
+  const [form, setForm]     = useState({ username: '', password: '' });
+  const [error, setError]   = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = await login(username, password);
-    if (success) {
-      navigate('/dashboard'); // потом сделаем разные дашборды
-    } else {
-      alert('Неверный логин или пароль');
+    setError('');
+    setLoading(true);
+    try {
+      const user = await login(form.username, form.password);
+      // Редирект по роли
+      if (user.role === 'admin') navigate('/admin/dashboard');
+      else navigate('/worker/dashboard');
+    } catch {
+      setError('Неверный логин или пароль');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '50px auto', padding: 20 }}>
-      <h2>Вход в систему мебельного цеха</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Логин"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ width: '100%', padding: 10, margin: '10px 0' }}
-        />
-        <input
-          type="password"
-          placeholder="Пароль"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={{ width: '100%', padding: 10, margin: '10px 0' }}
-        />
-        <button type="submit" style={{ width: '100%', padding: 12 }}>
-          Войти
-        </button>
-      </form>
+    <div style={styles.wrapper}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>FurnitureForge ERP</h2>
+        <p style={styles.subtitle}>Войдите в систему</p>
+
+        <form onSubmit={handleSubmit}>
+          <div style={styles.field}>
+            <label style={styles.label}>Логин</label>
+            <input
+              style={styles.input}
+              type="text"
+              value={form.username}
+              onChange={e => setForm({ ...form, username: e.target.value })}
+              placeholder="admin"
+              required
+            />
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Пароль</label>
+            <input
+              style={styles.input}
+              type="password"
+              value={form.password}
+              onChange={e => setForm({ ...form, password: e.target.value })}
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          {error && <p style={styles.error}>{error}</p>}
+
+          <button style={styles.button} type="submit" disabled={loading}>
+            {loading ? 'Вход...' : 'Войти'}
+          </button>
+        </form>
+      </div>
     </div>
   );
-};
+}
 
-export default Login;
+const styles = {
+  wrapper: {
+    minHeight: '100vh', display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+    background: '#f0f2f5',
+  },
+  card: {
+    background: '#fff', padding: '40px',
+    borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+    width: '100%', maxWidth: '400px',
+  },
+  title:    { margin: 0, fontSize: '24px', fontWeight: 700, color: '#1a1a2e' },
+  subtitle: { color: '#888', marginBottom: '28px' },
+  field:    { marginBottom: '16px' },
+  label:    { display: 'block', marginBottom: '6px', fontWeight: 500, color: '#444' },
+  input: {
+    width: '100%', padding: '10px 12px', borderRadius: '8px',
+    border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box',
+    outline: 'none',
+  },
+  button: {
+    width: '100%', padding: '12px', borderRadius: '8px',
+    background: '#4f46e5', color: '#fff', border: 'none',
+    fontSize: '16px', fontWeight: 600, cursor: 'pointer', marginTop: '8px',
+  },
+  error: { color: '#e53e3e', fontSize: '14px', marginBottom: '8px' },
+};

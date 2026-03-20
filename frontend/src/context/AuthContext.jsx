@@ -3,48 +3,62 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
+const API = 'http://127.0.0.1:8000';
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('access_token'));
+  const [user, setUser]   = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [loading, setLoading] = useState(true);
+
+  // При загрузке страницы — восстанавливаем пользователя из токена
+  useEffect(() => {
+    if (token) {
+      axios.get(`${API}/api/me/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => setUser(res.data))
+        .catch(() => logout())   // токен протух — разлогиниваем
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const login = async (username, password) => {
-    try {
-      const res = await axios.post('http://127.0.0.1:8001/api/token/', {
-        username,
-        password,
-      });
-      const access = res.data.access;
-      localStorage.setItem('access_token', access);
-      setToken(access);
+    // 1. Получаем токен
+    const { data } = await axios.post(`${API}/api/token/`, { username, password });
+    localStorage.setItem('token', data.access);
+    localStorage.setItem('refresh', data.refresh);
+    setToken(data.access);
 
-      const me = await axios.get('http://127.0.0.1:8001/api/me/', {
-        headers: { Authorization: `Bearer ${access}` },
-      });
-      setUser(me.data);
-      return true;
-    } catch (err) {
-      console.error(err);
-      return false;
-    }
+    // 2. Получаем данные пользователя
+    const me = await axios.get(`${API}/api/me/`, {
+      headers: { Authorization: `Bearer ${data.access}` }
+    });
+    setUser(me.data);
+
+    return me.data; // вернём роль для редиректа
   };
 
   const logout = () => {
-    localStorage.removeItem('access_token');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refresh');
     setToken(null);
     setUser(null);
   };
 
-  // Автоматически подгружаем данные пользователя при перезагрузке
+  // Axios interceptor — автоматически добавляет токен ко всем запросам
   useEffect(() => {
-    if (token) {
-      axios.get('http://127.0.0.1:8001/api/me/', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(res => setUser(res.data)).catch(() => logout());
-    }
-  }, [token]);
+    const id = axios.interceptors.request.use(config => {
+      const t = localStorage.getItem('token');
+      if (t) config.headers.Authorization = `Bearer ${t}`;
+      return config;
+    });
+    return () => axios.interceptors.request.eject(id);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
