@@ -10,6 +10,10 @@ class Material(models.Model):
         max_digits=12, decimal_places=2, default=0,
         verbose_name="Количество на складе"
     )
+    min_quantity = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0,
+        verbose_name="Минимальный остаток"
+    )
     price_per_unit = models.DecimalField(
         max_digits=12, decimal_places=2, default=0,
         verbose_name="Цена за единицу"

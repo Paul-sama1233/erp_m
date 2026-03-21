@@ -6,7 +6,7 @@ const API = 'http://127.0.0.1:8000';
 export default function Materials() {
   const [materials, setMaterials] = useState([]);
   const [showForm, setShowForm]   = useState(false);
-  const [form, setForm] = useState({ name: '', unit: '', quantity: 0, price_per_unit: 0 });
+  const [form, setForm] = useState({ name: '', unit: '', quantity: 0, price_per_unit: 0, min_quantity: 0 });
   const [loading, setLoading]     = useState(true);
 
   const token = localStorage.getItem('token');
@@ -55,6 +55,8 @@ export default function Materials() {
             value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} />
           <input style={s.input} placeholder="Цена за единицу" type="number" step="0.01"
             value={form.price_per_unit} onChange={e => setForm({...form, price_per_unit: e.target.value})} />
+          <input style={s.input} placeholder="Мин. остаток" type="number" step="0.01"
+            value={form.min_quantity}   onChange={e => setForm({...form, min_quantity: e.target.value})} />
           <button style={s.btn} type="submit">Сохранить</button>
         </form>
       )}
@@ -67,6 +69,7 @@ export default function Materials() {
             <th style={s.th}>Количество</th>
             <th style={s.th}>Цена за ед.</th>
             <th style={s.th}>Действия</th>
+            <th style={s.th}>Минимальное количество</th>
           </tr>
         </thead>
         <tbody>
