@@ -5,7 +5,8 @@ import Login from './pages/Login';
 import AdminLayout from './components/AdminLayout';
 import Materials from './pages/admin/Materials';
 import Products from './pages/admin/Products';
-import Productions from './pages/admin/Productions'
+import Productions from './pages/admin/Productions';
+import Contracts from './pages/admin/Contracts';
 const AdminDashboard = () => (
   <div style={{ padding: 40 }}>
     <h1>👑 Дашборд администратора</h1>
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="materials" element={<Materials />} />
             <Route path="products" element={<Products />} />
             <Route path="productions" element={<Productions />} />
+            <Route path="contracts" element={<Contracts />} />
           </Route>
 
           <Route

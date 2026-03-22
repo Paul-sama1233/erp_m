@@ -7,11 +7,13 @@ from core.models import CustomUser, Production, ProductionStage, Person
 from  rest_framework.decorators import action
 from rest_framework import status
 from inventory.models import Material, MaterialTransaction, Product, ProductMaterial
+from contracts.models import Contract, ContractProduct
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer,
     MaterialSerializer, MaterialTransactionSerializer,
     ProductSerializer, ProductMaterialSerializer,
-    ProductionSerializer, ProductionStageSerializer, PersonSerializer
+    ProductionSerializer, ProductionStageSerializer, PersonSerializer,
+    ContractSerializer, ContractProductSerializer,
 )
 
 
@@ -139,3 +141,13 @@ class ProductionStageViewSet(viewsets.ModelViewSet):
             except Person.DoesNotExist:
                 return ProductionStage.objects.none()
         return ProductionStage.objects.all()
+
+class ContractViewSet(viewsets.ModelViewSet):
+    queryset = Contract.objects.all().order_by('-created_at')
+    serializer_class = ContractSerializer
+    permission_classes = [IsAdmin]
+
+class ContractProductViewSet(viewsets.ModelViewSet):
+    queryset = ContractProduct.objects.all()
+    serializer_class = ContractProductSerializer
+    permission_classes = [IsAdmin]

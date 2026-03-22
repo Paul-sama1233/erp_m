@@ -12,15 +12,9 @@ const STAGE_LABELS = {
 };
 
 const STATUS_LABELS = {
-  pending:     'Ожидает',
-  in_progress: 'В работе',
-  completed:   'Завершено',
-};
-
-const STATUS_COLORS = {
-  pending:     { bg: '#fef9c3', color: '#854d0e' },
-  in_progress: { bg: '#dbeafe', color: '#1e40af' },
-  completed:   { bg: '#dcfce7', color: '#166534' },
+  pending:     { label: 'Ожидает',   color: '#f59e0b' },
+  in_progress: { label: 'В работе',  color: '#3b82f6' },
+  completed:   { label: 'Завершено', color: '#16a34a' },
 };
 
 export default function Productions() {
@@ -30,32 +24,37 @@ export default function Productions() {
   const [showForm, setShowForm]       = useState(false);
   const [expanded, setExpanded]       = useState(null);
   const [loading, setLoading]         = useState(true);
+  const [completing, setCompleting]   = useState(null);
+  const [editStage, setEditStage]     = useState(null);
 
-  // Форма нового производства
   const [form, setForm] = useState({ product: '', person: '' });
 
   // Форма добавления этапа
   const [stageForm, setStageForm] = useState({
-    stage_type: '', assigned_worker: ''
+    production: null,
+    stage_type: '',
+    assigned_worker: '',
   });
+  const [showStageForm, setShowStageForm] = useState(null);
 
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
   const fetchAll = async () => {
-    const [prod, products, persons] = await Promise.all([
+    const [prod, prods, pers] = await Promise.all([
       axios.get(`${API}/api/productions/`, { headers }),
       axios.get(`${API}/api/products/`, { headers }),
       axios.get(`${API}/api/persons/`, { headers }),
     ]);
     setProductions(prod.data);
-    setProducts(products.data);
-    setPersons(persons.data);
+    setProducts(prods.data);
+    setPersons(pers.data);
     setLoading(false);
   };
 
   useEffect(() => { fetchAll(); }, []);
 
+  // Запуск производства
   const handleCreate = async (e) => {
     e.preventDefault();
     await axios.post(`${API}/api/productions/`, form, { headers });
@@ -64,47 +63,61 @@ export default function Productions() {
     fetchAll();
   };
 
+  // Завершение производства (списание материалов)
   const handleComplete = async (id) => {
     if (!confirm('Завершить производство? Материалы будут списаны со склада.')) return;
+    setCompleting(id);
     try {
       await axios.post(`${API}/api/productions/${id}/complete/`, {}, { headers });
       alert('✅ Производство завершено, материалы списаны!');
       fetchAll();
     } catch (err) {
-      const details = err.response?.data?.details?.join('\n') || 'Неизвестная ошибка';
-      alert(`❌ Недостаточно материалов:\n${details}`);
+      const details = err.response?.data?.details;
+      if (details) {
+        alert('❌ Недостаточно материалов:\n' + details.join('\n'));
+      } else {
+        alert('Ошибка при завершении производства');
+      }
+    } finally {
+      setCompleting(null);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Удалить производство?')) return;
-    await axios.delete(`${API}/api/productions/${id}/`, { headers });
-    fetchAll();
-  };
-
+  // Добавление этапа
   const handleAddStage = async (e, productionId) => {
     e.preventDefault();
     await axios.post(`${API}/api/production-stages/`, {
       production: productionId,
       stage_type: stageForm.stage_type,
       assigned_worker: stageForm.assigned_worker,
-      status: 'pending',
     }, { headers });
-    setStageForm({ stage_type: '', assigned_worker: '' });
+    setStageForm({ production: null, stage_type: '', assigned_worker: '' });
+    setShowStageForm(null);
     fetchAll();
   };
-
-  const handleStageStatus = async (stageId, newStatus) => {
-    await axios.patch(`${API}/api/production-stages/${stageId}/`, {
-      status: newStatus,
-      ...(newStatus === 'in_progress' ? { started_at: new Date().toISOString() } : {}),
-      ...(newStatus === 'completed' ? { completed_at: new Date().toISOString() } : {}),
-    }, { headers });
-    fetchAll();
+  const handleDeleteStage = async (stageId) => {
+      if (!confirm('Удалить этот этап?')) return;
+      await axios.delete(`${API}/api/production-stages/${stageId}/`, { headers });
+      fetchAll();
   };
 
-  const handleRemoveStage = async (stageId) => {
-    await axios.delete(`${API}/api/production-stages/${stageId}/`, { headers });
+    //изменение ответственного
+  const handleUpdateStage = async (e) => {
+      e.preventDefault();
+      await axios.patch(
+        `${API}/api/production-stages/${editStage.id}/`,
+        { assigned_worker: editStage.assigned_worker },
+        { headers }
+          );
+      setEditStage(null);
+      fetchAll();
+      };
+
+
+  // Удаление производства
+  const handleDelete = async (id) => {
+    if (!confirm('Удалить производство?')) return;
+    await axios.delete(`${API}/api/productions/${id}/`, { headers });
     fetchAll();
   };
 
@@ -115,10 +128,11 @@ export default function Productions() {
       <div style={s.header}>
         <h2 style={s.title}>Производство</h2>
         <button style={s.btn} onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Отмена' : '+ Запустить производство'}
+          + Запустить производство
         </button>
       </div>
 
+      {/* Форма запуска производства */}
       {showForm && (
         <form onSubmit={handleCreate} style={s.form}>
           <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Новое производство</h3>
@@ -130,7 +144,9 @@ export default function Productions() {
                 onChange={e => setForm({ ...form, product: e.target.value })}>
                 <option value="">— Выберите изделие —</option>
                 {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.name} — {Number(p.price).toLocaleString()} сум
+                  </option>
                 ))}
               </select>
             </div>
@@ -159,135 +175,143 @@ export default function Productions() {
         {productions.length === 0 && (
           <div style={s.empty}>Производств пока нет</div>
         )}
-        {productions.map(prod => {
-          const allDone = prod.stages.length > 0 &&
-            prod.stages.every(st => st.status === 'completed');
+        {productions.map(prod => (
+          <div key={prod.id} style={s.card}>
 
-          return (
-            <div key={prod.id} style={s.card}>
-              {/* Заголовок */}
-              <div style={s.cardHeader}>
-                <div>
-                  <span style={s.productName}>{prod.product_name}</span>
-                  <span style={s.personName}>/ {prod.person_name}</span>
-                  <span style={s.date}>
-                    {new Date(prod.created_at).toLocaleDateString('ru-RU')}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  {allDone && (
-                    <button style={s.completeBtn}
-                      onClick={() => handleComplete(prod.id)}>
-                      ✅ Завершить и списать
-                    </button>
-                  )}
-                  <button style={s.expandBtn}
-                    onClick={() => setExpanded(expanded === prod.id ? null : prod.id)}>
-                    {expanded === prod.id ? '▲ Скрыть' : '▼ Этапы'}
-                    ({prod.stages.length})
-                  </button>
-                  <button style={s.delBtn}
-                    onClick={() => handleDelete(prod.id)}>
-                    Удалить
-                  </button>
-                </div>
+            {/* Заголовок карточки */}
+            <div style={s.cardHeader}>
+              <div>
+                <span style={s.productName}>{prod.product_name}</span>
+                <span style={s.personName}>👤 {prod.person_name}</span>
+                <span style={s.date}>
+                  {new Date(prod.created_at).toLocaleDateString('ru-RU')}
+                </span>
               </div>
-
-              {/* Прогресс этапов */}
-              {prod.stages.length > 0 && (
-                <div style={s.progressBar}>
-                  {prod.stages.map(st => (
-                    <div key={st.id} style={{
-                      ...s.progressSegment,
-                      background: STATUS_COLORS[st.status]?.bg || '#f0f0f0',
-                      flex: 1,
-                    }} title={`${STAGE_LABELS[st.stage_type]} — ${STATUS_LABELS[st.status]}`} />
-                  ))}
-                </div>
-              )}
-
-              {/* Раскрытые этапы */}
-              {expanded === prod.id && (
-                <div style={s.stagesBlock}>
-                  <table style={s.table}>
-                    <thead>
-                      <tr style={{ background: '#f9f9f9' }}>
-                        <th style={s.th}>Этап</th>
-                        <th style={s.th}>Работник</th>
-                        <th style={s.th}>Статус</th>
-                        <th style={s.th}>Действия</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {prod.stages.length === 0 && (
-                        <tr>
-                          <td colSpan={4} style={{ padding: 12, color: '#aaa', textAlign: 'center' }}>
-                            Этапы не добавлены
-                          </td>
-                        </tr>
-                      )}
-                      {prod.stages.map(st => (
-                        <tr key={st.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                          <td style={s.td}>{STAGE_LABELS[st.stage_type] || st.stage_type}</td>
-                          <td style={s.td}>{st.assigned_worker_name}</td>
-                          <td style={s.td}>
-                            <span style={{
-                              ...s.badge,
-                              ...STATUS_COLORS[st.status],
-                            }}>
-                              {STATUS_LABELS[st.status]}
-                            </span>
-                          </td>
-                          <td style={s.td}>
-                            <div style={{ display: 'flex', gap: 6 }}>
-                              {st.status === 'pending' && (
-                                <button style={s.startBtn}
-                                  onClick={() => handleStageStatus(st.id, 'in_progress')}>
-                                  В работу
-                                </button>
-                              )}
-                              {st.status === 'in_progress' && (
-                                <button style={s.doneBtn}
-                                  onClick={() => handleStageStatus(st.id, 'completed')}>
-                                  Завершить
-                                </button>
-                              )}
-                              <button style={s.delBtn}
-                                onClick={() => handleRemoveStage(st.id)}>
-                                ✕
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Форма добавления этапа */}
-                  <form onSubmit={(e) => handleAddStage(e, prod.id)} style={s.stageForm}>
-                    <select style={s.select} required
-                      value={stageForm.stage_type}
-                      onChange={e => setStageForm({ ...stageForm, stage_type: e.target.value })}>
-                      <option value="">— Выберите этап —</option>
-                      {Object.entries(STAGE_LABELS).map(([key, label]) => (
-                        <option key={key} value={key}>{label}</option>
-                      ))}
-                    </select>
-                    <select style={s.select} required
-                      value={stageForm.assigned_worker}
-                      onChange={e => setStageForm({ ...stageForm, assigned_worker: e.target.value })}>
-                      <option value="">— Назначить работника —</option>
-                      {persons.map(p => (
-                        <option key={p.id} value={p.id}>{p.full_name}</option>
-                      ))}
-                    </select>
-                    <button style={s.btn} type="submit">+ Добавить этап</button>
-                  </form>
-                </div>
-              )}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button style={s.expandBtn}
+                  onClick={() => setExpanded(expanded === prod.id ? null : prod.id)}>
+                  {expanded === prod.id ? '▲ Скрыть' : '▼ Этапы'} ({prod.stages.length})
+                </button>
+                <button
+                  style={{ ...s.completeBtn, opacity: completing === prod.id ? 0.6 : 1 }}
+                  onClick={() => handleComplete(prod.id)}
+                  disabled={completing === prod.id}>
+                  {completing === prod.id ? 'Завершение...' : '✅ Завершить'}
+                </button>
+                <button style={s.delBtn} onClick={() => handleDelete(prod.id)}>
+                  Удалить
+                </button>
+              </div>
             </div>
-          );
-        })}
+
+            {/* Этапы производства */}
+            {expanded === prod.id && (
+              <div style={s.stagesBlock}>
+                <table style={s.table}>
+                  <thead>
+                    <tr style={{ background: '#f9f9f9' }}>
+                      <th style={s.th}>Этап</th>
+                      <th style={s.th}>Работник</th>
+                      <th style={s.th}>Статус</th>
+                       <th style={s.th}>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+              {prod.stages.map(stage => (
+                      <tr key={stage.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={s.td}>{STAGE_LABELS[stage.stage_type]}</td>
+                        <td style={s.td}>
+                          {editStage?.id === stage.id ? (
+                            <form onSubmit={handleUpdateStage} style={{ display: 'flex', gap: 8 }}>
+                              <select style={s.select} required
+                                value={editStage.assigned_worker}
+                                onChange={e => setEditStage({ ...editStage, assigned_worker: e.target.value })}>
+                                <option value="">— Работник —</option>
+                                {persons
+                                  .filter(p => p.specialization === stage.stage_type)
+                                  .map(p => (
+                                    <option key={p.id} value={p.id}>{p.full_name}</option>
+                                  ))
+                                }
+                              </select>
+                              <button style={s.btn} type="submit">✓</button>
+                              <button style={s.cancelBtn} type="button"
+                                onClick={() => setEditStage(null)}>✕</button>
+                            </form>
+                          ) : (
+                            stage.assigned_worker_name
+                          )}
+                        </td>
+                        <td style={s.td}>
+                          <span style={{
+                            ...s.badge,
+                            background: STATUS_LABELS[stage.status]?.color + '20',
+                            color: STATUS_LABELS[stage.status]?.color,
+                          }}>
+                            {STATUS_LABELS[stage.status]?.label}
+                          </span>
+                        </td>
+                        <td style={s.td}>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button style={s.editBtn}
+                              onClick={() => setEditStage({
+                                id: stage.id,
+                                stage_type: stage.stage_type,
+                                assigned_worker: stage.assigned_worker,
+                              })}>
+                              Изменить
+                            </button>
+                            <button style={s.delBtn} onClick={() => handleDeleteStage(stage.id)}>
+                              Удалить
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+
+                {/* Форма добавления этапа */}
+            {showStageForm === prod.id ? (
+              <form onSubmit={(e) => handleAddStage(e, prod.id)} style={s.stageForm}>
+                <select style={s.select} required
+                  value={stageForm.stage_type}
+                  onChange={e => setStageForm({ ...stageForm, stage_type: e.target.value, assigned_worker: '' })}>
+                  <option value="">— Этап —</option>
+                  {Object.entries(STAGE_LABELS).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
+                </select>
+
+                <select style={s.select} required
+                  value={stageForm.assigned_worker}
+                  onChange={e => setStageForm({ ...stageForm, assigned_worker: e.target.value })}>
+                  <option value="">— Работник —</option>
+                  {persons
+                    .filter(p => !stageForm.stage_type || p.specialization === stageForm.stage_type)
+                    .map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.full_name}
+                      </option>
+                    ))
+                  }
+                </select>
+
+                <button style={s.btn} type="submit">Добавить</button>
+                <button style={s.cancelBtn} type="button"
+                  onClick={() => setShowStageForm(null)}>Отмена</button>
+              </form>
+            ) : (
+                  <button style={{ ...s.expandBtn, marginTop: 12 }}
+                    onClick={() => setShowStageForm(prod.id)}>
+                    + Назначить этап
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -301,16 +325,8 @@ const s = {
                  borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14 },
   cancelBtn:   { background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db',
                  padding: '10px 20px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 14 },
-  completeBtn: { background: '#dcfce7', color: '#166534', border: 'none', padding: '8px 16px',
+  completeBtn: { background: '#dcfce7', color: '#16a34a', border: 'none', padding: '8px 16px',
                  borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 },
-  expandBtn:   { background: '#f0f0ff', color: '#4f46e5', border: 'none', padding: '6px 14px',
-                 borderRadius: 6, cursor: 'pointer', fontWeight: 500, fontSize: 13 },
-  delBtn:      { background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 12px',
-                 borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
-  startBtn:    { background: '#dbeafe', color: '#1e40af', border: 'none', padding: '6px 12px',
-                 borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
-  doneBtn:     { background: '#dcfce7', color: '#166534', border: 'none', padding: '6px 12px',
-                 borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
   form:        { background: '#f8f8ff', padding: 24, borderRadius: 12,
                  marginBottom: 24, border: '1px solid #e0e0f0' },
   formGrid:    { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 },
@@ -323,16 +339,20 @@ const s = {
                  boxShadow: '0 2px 8px rgba(0,0,0,0.07)', border: '1px solid #f0f0f0' },
   cardHeader:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                  padding: '16px 20px' },
-  productName: { fontWeight: 700, fontSize: 16, marginRight: 8 },
-  personName:  { color: '#666', fontSize: 14, marginRight: 8 },
+  productName: { fontWeight: 700, fontSize: 16, marginRight: 12 },
+  personName:  { color: '#666', fontSize: 14, marginRight: 12 },
   date:        { color: '#aaa', fontSize: 13 },
-  progressBar: { display: 'flex', height: 6, margin: '0 20px 0' },
-  progressSegment: { height: '100%', transition: 'background 0.3s' },
+  expandBtn:   { background: '#f0f0ff', color: '#4f46e5', border: 'none', padding: '6px 14px',
+                 borderRadius: 6, cursor: 'pointer', fontWeight: 500, fontSize: 13 },
+  delBtn:      { background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 14px',
+                 borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
   stagesBlock: { borderTop: '1px solid #f0f0f0', padding: '16px 20px', background: '#fafafa' },
-  table:       { width: '100%', borderCollapse: 'collapse', marginBottom: 16 },
+  table:       { width: '100%', borderCollapse: 'collapse', marginBottom: 12 },
   th:          { padding: '10px 12px', textAlign: 'left', fontWeight: 600, fontSize: 13 },
   td:          { padding: '10px 12px', fontSize: 14 },
-  badge:       { padding: '3px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600 },
+  badge:       { padding: '4px 10px', borderRadius: 20, fontWeight: 600, fontSize: 12 },
   stageForm:   { display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap',
-                 paddingTop: 12, borderTop: '1px dashed #e0e0e0' },
+                 paddingTop: 12, borderTop: '1px dashed #e0e0e0', marginTop: 8 },
+  editBtn:     { background: '#e0e7ff', color: '#4f46e5', border: 'none', padding: '6px 14px',
+                 borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
 };

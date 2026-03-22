@@ -2,7 +2,22 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from core.models import CustomUser, Production, ProductionStage, Person
 from inventory.models import Material, MaterialTransaction, Product, ProductMaterial
+from contracts.models import Contract, ContractProduct
 
+class ContractProductSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+
+    class Meta:
+        model = ContractProduct
+        fields = ['id', 'contract', 'product', 'product_name',
+                  'quantity', 'price', 'production_date']
+class ContractSerializer(serializers.ModelSerializer):
+    items = ContractProductSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Contract
+        fields =['id', 'client_name', 'phone', 'address',
+                 'created_at', 'items']
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -56,8 +71,9 @@ class ProductionStageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductionStage
         fields = [
-            'id', 'stage_type', 'assigned_worker', 'assigned_worker_name',
-            'status', 'started_at', 'completed_at'
+            'id','production', 'stage_type', 'assigned_worker',
+            'assigned_worker_name','status', 'started_at',
+            'completed_at'
         ]
 
 class ProductionSerializer(serializers.ModelSerializer):
@@ -75,4 +91,4 @@ class ProductionSerializer(serializers.ModelSerializer):
 class PersonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Person
-        fields = ['id', 'full_name', 'phone']
+        fields = ['id', 'full_name', 'phone', 'specialization']

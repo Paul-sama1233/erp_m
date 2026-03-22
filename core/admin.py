@@ -13,6 +13,10 @@ class CustomUserAdmin(UserAdmin):
     list_display = ['username', 'email', 'role', 'specialization', 'is_staff']
     list_filter = ['role', 'specialization']
 
+class PersonAdmin(admin.ModelAdmin):
+    list_display = ['full_name', 'phone', 'specialization']
+    list_editable = ['specialization']
+
 admin.site.register(Person)
 admin.site.register(Role)
 admin.site.register(PersonRole)

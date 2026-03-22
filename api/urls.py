@@ -6,6 +6,7 @@ from .views import (
     MaterialViewSet, TransactionViewSet,
     ProductViewSet, ProductMaterialViewSet,
     PersonViewSet, ProductionViewSet, ProductionStageViewSet,
+    ContractViewSet, ContractProductViewSet,
 )
 
 router = DefaultRouter()
@@ -16,6 +17,8 @@ router.register(r'product-materials', ProductMaterialViewSet)
 router.register(r'persons', PersonViewSet)
 router.register(r'productions', ProductionViewSet)
 router.register(r'production-stages', ProductionStageViewSet)
+router.register(r'contracts', ContractViewSet)
+router.register(r'contract-products', ContractProductViewSet)
 
 
 urlpatterns = [
