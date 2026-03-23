@@ -47,6 +47,20 @@ export default function Contracts() {
     setEditingId(null);
     refresh();
   };
+  const handleStartProduction = async (item, contractId) => {
+  // Помечаем позицию как "в производстве"
+  await axios.patch(`${API}/api/contract-products/${item.id}/`,
+    { status: 'in_progress' },
+    { headers }
+  );
+  // Создаём производство автоматически
+  await axios.post(`${API}/api/productions/`, {
+    product: item.product,
+    contract: contractId,
+  }, { headers });
+  refresh();
+  alert(`✅ Производство для "${item.product_name}" запущено!`);
+ };
 
   const handleDelete = async (id) => {
     if (!confirm('Удалить договор?')) return;
@@ -166,6 +180,7 @@ export default function Contracts() {
                       <th style={s.th}>Кол-во</th>
                       <th style={s.th}>Цена</th>
                       <th style={s.th}>Дата производства</th>
+                      <th style={s.th}>Статус</th>
                       <th style={s.th}>Действия</th>
                     </tr>
                   </thead>
@@ -177,22 +192,39 @@ export default function Contracts() {
                         </td>
                       </tr>
                     )}
-                    {c.items.map(item => (
-                      <tr key={item.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                        <td style={s.td}>{item.product_name}</td>
-                        <td style={s.td}>{item.quantity} шт.</td>
-                        <td style={s.td}>{Number(item.price).toLocaleString()} сум</td>
-                        <td style={s.td}>
-                          {item.production_date
-                            ? new Date(item.production_date).toLocaleDateString('ru-RU')
-                            : '—'}
-                        </td>
-                        <td style={s.td}>
-                          <button style={s.delBtn} onClick={() => handleRemoveItem(item.id)}>
-                            Удалить
-                          </button>
-                        </td>
-                      </tr>
+            {c.items.map(item => (
+              <tr key={item.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                <td style={s.td}>{item.product_name}</td>
+                <td style={s.td}>{item.quantity} шт.</td>
+                <td style={s.td}>{Number(item.price).toLocaleString()} сум</td>
+                <td style={s.td}>
+                  {item.production_date
+                    ? new Date(item.production_date).toLocaleDateString('ru-RU')
+                    : '—'}
+                </td>
+                <td style={s.td}>
+                  <span style={{
+                    padding: '3px 10px', borderRadius: 20, fontWeight: 600, fontSize: 12,
+                    background: item.status === 'completed'  ? '#dcfce7' :
+                                item.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
+                    color:      item.status === 'completed'  ? '#16a34a' :
+                                item.status === 'in_progress' ? '#1d4ed8' : '#888',
+                  }}>
+                    {item.status === 'completed'  ? '✅ Выполнено'      :
+                     item.status === 'in_progress' ? '🔨 В производстве' : '⏳ Ожидает'}
+                  </span>
+                </td>
+                <td style={s.td}>
+                  {item.status === 'pending' && (
+                    <button style={s.startBtn} onClick={() => handleStartProduction(item, c.id)}>
+                      ▶ В производство
+                    </button>
+                  )}
+                  <button style={s.delBtn} onClick={() => handleRemoveItem(item.id)}>
+                    Удалить
+                  </button>
+                </td>
+              </tr>
                     ))}
                   </tbody>
                 </table>
@@ -274,4 +306,7 @@ const s = {
   td:         { padding: '10px 12px', fontSize: 14 },
   itemForm:   { display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap',
                 paddingTop: 12, borderTop: '1px dashed #e0e0e0', marginTop: 8 },
+  startBtn:   { background: '#dbeafe', color: '#1d4ed8', border: 'none',
+                padding: '5px 12px', borderRadius: 6, cursor: 'pointer',
+                fontWeight: 500, marginRight: 6 },
 };

@@ -26,14 +26,15 @@ export default function Productions() {
   const [loading, setLoading]         = useState(true);
   const [completing, setCompleting]   = useState(null);
   const [editStage, setEditStage]     = useState(null);
+  const [contracts, setContracts]     = useState([]);
 
-  const [form, setForm] = useState({ product: '', person: '' });
+
+  const [form, setForm] = useState({ product: '', contract: '' });
+
 
   // Форма добавления этапа
   const [stageForm, setStageForm] = useState({
-    production: null,
-    stage_type: '',
-    assigned_worker: '',
+     stage_type: '', assigned_worker: '', order: 0
   });
   const [showStageForm, setShowStageForm] = useState(null);
 
@@ -41,16 +42,18 @@ export default function Productions() {
   const headers = { Authorization: `Bearer ${token}` };
 
   const fetchAll = async () => {
-    const [prod, prods, pers] = await Promise.all([
-      axios.get(`${API}/api/productions/`, { headers }),
-      axios.get(`${API}/api/products/`, { headers }),
-      axios.get(`${API}/api/persons/`, { headers }),
-    ]);
-    setProductions(prod.data);
-    setProducts(prods.data);
-    setPersons(pers.data);
-    setLoading(false);
-  };
+  const [prod, prods, pers, contr] = await Promise.all([
+    axios.get(`${API}/api/productions/`, { headers }),
+    axios.get(`${API}/api/products/`, { headers }),
+    axios.get(`${API}/api/persons/`, { headers }),
+    axios.get(`${API}/api/contracts/`, { headers }),
+  ]);
+  setProductions(prod.data);
+  setProducts(prods.data);
+  setPersons(pers.data);
+  setContracts(contr.data);
+  setLoading(false);
+};
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -84,17 +87,18 @@ export default function Productions() {
   };
 
   // Добавление этапа
-  const handleAddStage = async (e, productionId) => {
-    e.preventDefault();
-    await axios.post(`${API}/api/production-stages/`, {
-      production: productionId,
-      stage_type: stageForm.stage_type,
-      assigned_worker: stageForm.assigned_worker,
-    }, { headers });
-    setStageForm({ production: null, stage_type: '', assigned_worker: '' });
-    setShowStageForm(null);
-    fetchAll();
-  };
+    const handleAddStage = async (e, productionId) => {
+      e.preventDefault();
+      await axios.post(`${API}/api/production-stages/`, {
+        production:      productionId,
+        stage_type:      stageForm.stage_type,
+        assigned_worker: stageForm.assigned_worker,
+        order:           stageForm.order,
+      }, { headers });
+      setStageForm({ stage_type: '', assigned_worker: '', order: 0 });
+      setShowStageForm(null);
+      refresh();
+    };
   const handleDeleteStage = async (stageId) => {
       if (!confirm('Удалить этот этап?')) return;
       await axios.delete(`${API}/api/production-stages/${stageId}/`, { headers });
@@ -132,42 +136,44 @@ export default function Productions() {
         </button>
       </div>
 
-      {/* Форма запуска производства */}
-      {showForm && (
-        <form onSubmit={handleCreate} style={s.form}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Новое производство</h3>
-          <div style={s.formGrid}>
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Изделие</label>
-              <select style={s.select} required
-                value={form.product}
-                onChange={e => setForm({ ...form, product: e.target.value })}>
-                <option value="">— Выберите изделие —</option>
-                {products.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} — {Number(p.price).toLocaleString()} сум
-                  </option>
-                ))}
-              </select>
+              {/* Форма запуска производства */}
+             {showForm && (
+          <form onSubmit={handleCreate} style={s.form}>
+            <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Новое производство</h3>
+            <div style={s.formGrid}>
+              <div style={s.fieldGroup}>
+                <label style={s.label}>Изделие</label>
+                <select style={s.select} required
+                  value={form.product}
+                  onChange={e => setForm({ ...form, product: e.target.value })}>
+                  <option value="">— Выберите изделие —</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — {Number(p.price).toLocaleString()} сум
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={s.fieldGroup}>
+                <label style={s.label}>Договор (необязательно)</label>
+                <select style={s.select}
+                  value={form.contract}
+                  onChange={e => setForm({ ...form, contract: e.target.value })}>
+                  <option value="">— Без договора —</option>
+                  {contracts.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.client_name} ({new Date(c.created_at).toLocaleDateString('ru-RU')})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div style={s.fieldGroup}>
-              <label style={s.label}>Ответственный сотрудник</label>
-              <select style={s.select} required
-                value={form.person}
-                onChange={e => setForm({ ...form, person: e.target.value })}>
-                <option value="">— Выберите сотрудника —</option>
-                {persons.map(p => (
-                  <option key={p.id} value={p.id}>{p.full_name}</option>
-                ))}
-              </select>
+            <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+              <button style={s.btn} type="submit">Запустить</button>
+              <button style={s.cancelBtn} type="button"
+                onClick={() => setShowForm(false)}>Отмена</button>
             </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-            <button style={s.btn} type="submit">Запустить</button>
-            <button style={s.cancelBtn} type="button"
-              onClick={() => setShowForm(false)}>Отмена</button>
-          </div>
-        </form>
+          </form>
       )}
 
       {/* Список производств */}
@@ -182,9 +188,23 @@ export default function Productions() {
             <div style={s.cardHeader}>
               <div>
                 <span style={s.productName}>{prod.product_name}</span>
-                <span style={s.personName}>👤 {prod.person_name}</span>
+                {prod.contract_info && (
+                  <span style={s.personName}>
+                    📋 {prod.contract_info.client_name}
+                  </span>
+                )}
                 <span style={s.date}>
                   {new Date(prod.created_at).toLocaleDateString('ru-RU')}
+                </span>
+                <span style={{
+                  ...s.statusBadge,
+                  background: prod.status === 'completed' ? '#dcfce7' :
+                              prod.status === 'started'   ? '#dbeafe' : '#fef9c3',
+                  color:      prod.status === 'completed' ? '#16a34a' :
+                              prod.status === 'started'   ? '#1d4ed8' : '#854d0e',
+                }}>
+                  {prod.status === 'completed' ? 'Завершено' :
+                   prod.status === 'started'   ? 'В работе'  : 'Ожидает'}
                 </span>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -274,34 +294,36 @@ export default function Productions() {
 
                 {/* Форма добавления этапа */}
             {showStageForm === prod.id ? (
-              <form onSubmit={(e) => handleAddStage(e, prod.id)} style={s.stageForm}>
-                <select style={s.select} required
-                  value={stageForm.stage_type}
-                  onChange={e => setStageForm({ ...stageForm, stage_type: e.target.value, assigned_worker: '' })}>
-                  <option value="">— Этап —</option>
-                  {Object.entries(STAGE_LABELS).map(([val, label]) => (
-                    <option key={val} value={val}>{label}</option>
-                  ))}
-                </select>
-
-                <select style={s.select} required
-                  value={stageForm.assigned_worker}
-                  onChange={e => setStageForm({ ...stageForm, assigned_worker: e.target.value })}>
-                  <option value="">— Работник —</option>
-                  {persons
-                    .filter(p => !stageForm.stage_type || p.specialization === stageForm.stage_type)
-                    .map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.full_name}
-                      </option>
-                    ))
-                  }
-                </select>
-
-                <button style={s.btn} type="submit">Добавить</button>
-                <button style={s.cancelBtn} type="button"
-                  onClick={() => setShowStageForm(null)}>Отмена</button>
-              </form>
+          <form onSubmit={(e) => handleAddStage(e, prod.id)} style={s.stageForm}>
+            <select style={s.select} required
+              value={stageForm.stage_type}
+              onChange={e => setStageForm({
+                ...stageForm, stage_type: e.target.value, assigned_worker: ''
+              })}>
+              <option value="">— Этап —</option>
+              {Object.entries(STAGE_LABELS).map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
+            <select style={s.select} required
+              value={stageForm.assigned_worker}
+              onChange={e => setStageForm({ ...stageForm, assigned_worker: e.target.value })}>
+              <option value="">— Работник —</option>
+              {persons
+                .filter(p => !stageForm.stage_type || p.specialization === stageForm.stage_type)
+                .map(p => (
+                  <option key={p.id} value={p.id}>{p.full_name}</option>
+                ))
+              }
+            </select>
+            <input style={{ ...s.select, width: 80 }}
+              type="number" min="0" placeholder="Порядок"
+              value={stageForm.order}
+              onChange={e => setStageForm({ ...stageForm, order: e.target.value })} />
+            <button style={s.btn} type="submit">Добавить</button>
+            <button style={s.cancelBtn} type="button"
+              onClick={() => setShowStageForm(null)}>Отмена</button>
+          </form>
             ) : (
                   <button style={{ ...s.expandBtn, marginTop: 12 }}
                     onClick={() => setShowStageForm(prod.id)}>
@@ -355,4 +377,6 @@ const s = {
                  paddingTop: 12, borderTop: '1px dashed #e0e0e0', marginTop: 8 },
   editBtn:     { background: '#e0e7ff', color: '#4f46e5', border: 'none', padding: '6px 14px',
                  borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
+  statusBadge: { padding: '3px 10px', borderRadius: 20, fontWeight: 600,
+                 fontSize: 12, marginLeft: 8 },
 };

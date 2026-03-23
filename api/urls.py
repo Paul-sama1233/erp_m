@@ -7,6 +7,7 @@ from .views import (
     ProductViewSet, ProductMaterialViewSet,
     PersonViewSet, ProductionViewSet, ProductionStageViewSet,
     ContractViewSet, ContractProductViewSet,
+    MyStagesView, DashboardStatsView,
 )
 
 router = DefaultRouter()
@@ -21,9 +22,12 @@ router.register(r'contracts', ContractViewSet)
 router.register(r'contract-products', ContractProductViewSet)
 
 
+
 urlpatterns = [
     path('token/', CustomTokenObtainPairView.as_view()),
     path('token/refresh/', TokenRefreshView.as_view()),
     path('me/', MeView.as_view()),
+    path('my-stages/', MyStagesView.as_view()),
     path('', include(router.urls)),
+    path('dashboard-stats/', DashboardStatsView.as_view()),
 ]

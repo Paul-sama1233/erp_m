@@ -19,19 +19,17 @@ class Contract(models.Model):
 
 class ContractProduct(models.Model):
     """contract_products — что именно заказал клиент"""
-    contract = models.ForeignKey(
-        Contract, on_delete=models.CASCADE, related_name='items'
-    )
-    product = models.ForeignKey(
-        Product, on_delete=models.PROTECT, verbose_name="Изделие"
-    )
-    quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
-    price = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name="Цена"
-    )
-    production_date = models.DateField(
-        null=True, blank=True, verbose_name="Дата производства"
-    )
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает'),
+        ('in_progress', 'В производстве'),
+        ('completed', 'Выполнено'),
+    ]
+    contract = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey('inventory.Product', on_delete=models.PROTECT)
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=12, decimal_places=2)
+    production_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     class Meta:
         verbose_name = "Позиция договора"

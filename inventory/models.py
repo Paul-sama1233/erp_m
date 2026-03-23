@@ -91,3 +91,28 @@ class ProductMaterial(models.Model):
 
     def __str__(self):
         return f"{self.product.name} → {self.material.name} × {self.quantity}"
+
+class PurchaseRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending',   'В ожидании'),
+        ('approved',  'Одобрено'),
+        ('purchased', 'Закуплено'),
+    ]
+    material = models.ForeignKey(
+        Material, on_delete=models.PROTECT, verbose_name="Материал"
+    )
+    requested_quantity = models.DecimalField(
+        max_digits=12, decimal_places=2, verbose_name="Запрашиваемое количество"
+    )
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES,
+        default='pending', verbose_name="Статус"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Запрос на закупку"
+        verbose_name_plural = "Запросы на закупку"
+
+    def __str__(self):
+        return f"{self.material.name} — {self.requested_quantity}"

@@ -7,16 +7,11 @@ import Materials from './pages/admin/Materials';
 import Products from './pages/admin/Products';
 import Productions from './pages/admin/Productions';
 import Contracts from './pages/admin/Contracts';
-const AdminDashboard = () => (
-  <div style={{ padding: 40 }}>
-    <h1>👑 Дашборд администратора</h1>
-    <p style={{ color: '#888', marginTop: 8 }}>Выберите раздел в меню слева</p>
-  </div>
-);
-
-const WorkerDashboard = () => (
-  <h1 style={{ padding: 40 }}>🔨 Дашборд работника</h1>
-);
+import Supply from './pages/admin/Supply';
+import Persons from './pages/admin/Persons';
+import WorkerDashboard from './pages/worker/WorkerDashboard';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Reports from './pages/admin/Reports';
 
 export default function App() {
   return (
@@ -34,11 +29,14 @@ export default function App() {
               </PrivateRoute>
             }
           >
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="materials" element={<Materials />} />
-            <Route path="products" element={<Products />} />
+            <Route path="dashboard"   element={<AdminDashboard />} />
+            <Route path="materials"   element={<Materials />} />
+            <Route path="products"    element={<Products />} />
             <Route path="productions" element={<Productions />} />
-            <Route path="contracts" element={<Contracts />} />
+            <Route path="contracts"   element={<Contracts />} />
+            <Route path="supply"      element={<Supply />} />
+            <Route path="persons"     element={<Persons />} />
+            <Route path="reports"     element={<Reports />} />
           </Route>
 
           <Route

@@ -84,40 +84,47 @@ class PersonRole(models.Model):
 
 
 class Production(models.Model):
-    """production"""
+    STATUS_CHOICES = [
+        ('pending',   'Ожидает'),
+        ('started',   'В работе'),
+        ('completed', 'Завершено'),
+    ]
     product = models.ForeignKey(
-        'inventory.Product',
-        on_delete=models.PROTECT,
-        verbose_name="Изделие"
+        'inventory.Product', on_delete=models.PROTECT, verbose_name="Изделие"
     )
-    person = models.ForeignKey(
-        Person,
-        on_delete=models.PROTECT,
-        verbose_name="Ответственный сотрудник"
+    contract = models.ForeignKey(
+        'contracts.Contract', on_delete=models.SET_NULL,
+        null=True, blank=True, verbose_name="Договор"
     )
+    # person убираем полностью
     created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES,
+        default='pending', verbose_name="Статус"
+    )
+    current_stage_order = models.PositiveIntegerField(
+        default=0, verbose_name="Текущий этап (порядковый номер)"
+    )
 
     class Meta:
         verbose_name = "Производство"
         verbose_name_plural = "Производства"
 
     def __str__(self):
-        return f"{self.product.name} / {self.person.full_name}"
-
+        return f"{self.product.name} / {self.created_at.strftime('%d.%m.%Y')}"
 
 class ProductionStage(models.Model):
-    """Этапы производства (каркас → поролон → обивка и т.д.)"""
     STAGE_CHOICES = [
-        ('frame', 'Каркас'),
-        ('springs', 'Пружины / Механизмы'),
-        ('sewing', 'Шитьё'),
-        ('foam', 'Поролон'),
+        ('frame',      'Каркас'),
+        ('springs',    'Пружины / Механизмы'),
+        ('sewing',     'Шитьё'),
+        ('foam',       'Поролон'),
         ('upholstery', 'Обивка'),
     ]
     STATUS_CHOICES = [
-        ('pending', 'Ожидает'),
+        ('pending',     'Ожидает'),
         ('in_progress', 'В работе'),
-        ('completed', 'Завершено'),
+        ('completed',   'Завершено'),
     ]
     production = models.ForeignKey(
         Production, on_delete=models.CASCADE, related_name='stages'
@@ -126,14 +133,17 @@ class ProductionStage(models.Model):
     assigned_worker = models.ForeignKey(
         Person, on_delete=models.PROTECT, verbose_name="Назначенный работник"
     )
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок выполнения")
+    status = models.CharField(
+        max_length=15, choices=STATUS_CHOICES, default='pending'
+    )
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Этап производства"
         verbose_name_plural = "Этапы производства"
-        ordering = ['production', 'stage_type']
+        ordering = ['production', 'order']
 
     def __str__(self):
-        return f"{self.production} — {self.get_stage_type_display()}"
+        return f"{self.production} — {self.get_stage_type_display()} (#{self.order})"

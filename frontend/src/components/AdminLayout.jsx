@@ -7,6 +7,9 @@ const menuItems = [
   { path: '/admin/products',   label: 'Изделия',   icon: '🪑' },
   { path: '/admin/productions', label: 'Производство', icon: '🏭' },
   { path: '/admin/contracts',  label: 'Договоры',  icon: '📋' },
+  { path: '/admin/supply',     label: 'Поставка',  icon: '🚚' },
+  { path: '/admin/persons',  label: 'Сотрудники',  icon: '👷' },
+  { path: '/admin/reports',    label: 'Отчеты',    icon: '📊'},
 ];
 
 export default function AdminLayout() {
