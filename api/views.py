@@ -1,4 +1,5 @@
 from django.db import transaction
+from decimal import Decimal, InvalidOperation
 from django.utils import timezone
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
@@ -315,57 +316,95 @@ class StageActionView(APIView):
 
             return Response({'success': True, 'message': 'Этап начат'})
 
+
         elif action == 'complete':
+
             if stage.status != 'in_progress':
                 return Response({'error': 'Этап ещё не начат'}, status=400)
 
             # Списываем материалы для этого этапа
+
             materials_to_writeoff = request.data.get('materials', [])
 
             with transaction.atomic():
+
                 for item in materials_to_writeoff:
+
                     try:
-                        from inventory.models import Material
+
                         material = Material.objects.get(pk=item['material_id'])
-                        qty      = float(item['quantity'])
+
+                        # Исправлено: приводим к Decimal
+
+                        qty = Decimal(str(item['quantity']))  # ← безопасное преобразование
 
                         if material.quantity < qty:
                             return Response(
+
                                 {'error': f'Недостаточно {material.name}: '
+
                                           f'нужно {qty}, на складе {material.quantity}'},
+
                                 status=400
+
                             )
 
                         material.quantity -= qty
+
                         material.save()
 
                         MaterialTransaction.objects.create(
-                            material=material,
-                            quantity=qty,
-                            transaction_type='out',
-                            comment=f'Списание: этап "{stage.get_stage_type_display()}" '
-                                    f'производства #{stage.production.id}',
-                        )
-                    except Material.DoesNotExist:
-                        pass
 
-                stage.status       = 'completed'
+                            material=material,
+
+                            quantity=qty,
+
+                            transaction_type='out',
+
+                            comment=f'Списание: этап "{stage.get_stage_type_display()}" '
+
+                                    f'производства #{stage.production.id}',
+
+                        )
+
+                    except Material.DoesNotExist:
+
+                        return Response({'error': f'Материал с id {item["material_id"]} не найден'}, status=400)
+
+                    except (KeyError, TypeError, InvalidOperation):
+
+                        return Response({'error': 'Неверный формат данных материалов'}, status=400)
+
+                stage.status = 'completed'
+
                 stage.completed_at = now
+
                 stage.save()
 
                 # Проверяем — все ли этапы завершены
-                production    = stage.production
-                all_stages    = ProductionStage.objects.filter(production=production)
+
+                production = stage.production
+
+                all_stages = ProductionStage.objects.filter(production=production)
+
                 all_completed = all(s.status == 'completed' for s in all_stages)
 
                 if all_completed:
+
                     production.status = 'completed'
+
                 else:
+
                     # Переходим к следующему этапу
+
                     next_stage = ProductionStage.objects.filter(
+
                         production=production,
+
                         order__gt=stage.order,
+
                         status='pending'
+
                     ).order_by('order').first()
 
                     if next_stage:
