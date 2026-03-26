@@ -82,13 +82,11 @@ class ProductionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
     def complete(self, request, pk=None):
-        """Завершить производство — списать материалы"""
         production = self.get_object()
 
         with transaction.atomic():
             product_materials = production.product.materials.all()
 
-            # Проверяем наличие всех материалов
             errors = []
             for pm in product_materials:
                 material = pm.material
@@ -104,13 +102,11 @@ class ProductionViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Списываем материалы
             for pm in product_materials:
                 material = pm.material
                 material.quantity -= pm.quantity
                 material.save()
 
-                # Записываем транзакцию
                 MaterialTransaction.objects.create(
                     material=material,
                     quantity=pm.quantity,
@@ -118,7 +114,6 @@ class ProductionViewSet(viewsets.ModelViewSet):
                     comment=f'Списание для производства #{production.id} — {production.product.name}',
                 )
 
-                # Проверяем минимальный остаток
                 if material.quantity <= material.min_quantity:
                     PurchaseRequest.objects.get_or_create(
                         material=material,
@@ -126,17 +121,8 @@ class ProductionViewSet(viewsets.ModelViewSet):
                         defaults={'requested_quantity': material.min_quantity * 2}
                     )
 
-                    if production.contract:
-                        from contracts.models import ContractProduct
-                        ContractProduct.objects.filter(
-                            contract=production.contract,
-                            product=production.product,
-                            status='in_progress'
-                        ).update(status='completed')
-
-                    production.status = 'completed'
-                    production.save()
-
+            production.status = 'completed'
+            production.save()
 
         return Response({'success': True, 'message': 'Производство завершено, материалы списаны'})
 
@@ -172,12 +158,10 @@ class MyStagesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        username = request.user.username  # ← строка, не функция
-
-        # Ищем Person по всем возможным совпадениям
         person = None
+        username = request.user.username
 
-        # 1. По full_name == "Имя Фамилия" из Django-пользователя
+        # 1. По полному имени из Django-пользователя (прямой порядок)
         full_name = f"{request.user.first_name} {request.user.last_name}".strip()
         if full_name:
             try:
@@ -185,28 +169,40 @@ class MyStagesView(APIView):
             except Person.DoesNotExist:
                 pass
 
-        # 2. По username если не нашли
+        # 2. По обратному порядку (Фамилия Имя)
+        if not person and request.user.first_name and request.user.last_name:
+            reversed_name = f"{request.user.last_name} {request.user.first_name}".strip()
+            try:
+                person = Person.objects.get(full_name=reversed_name)
+            except Person.DoesNotExist:
+                pass
+
+        # 3. По username
         if not person:
             try:
                 person = Person.objects.get(full_name=username)
             except Person.DoesNotExist:
                 pass
 
-        # 3. Если всё равно не нашли — возвращаем пустой список
+        # 4. Поиск по частям имени
+        if not person and request.user.first_name:
+            try:
+                person = Person.objects.get(
+                    full_name__icontains=request.user.first_name
+                )
+            except (Person.DoesNotExist, Person.MultipleObjectsReturned):
+                pass
+
         if not person:
             return Response([])
 
-        # Показываем только этапы где работник назначен
-        # И только если это текущий активный этап производства
         stages = ProductionStage.objects.filter(
             assigned_worker=person
-        ).order_by('-production__created_at', 'order')
+        ).order_by('production__created_at', 'order')
 
-        # Фильтруем — показываем только те где предыдущий этап завершён
         active_stages = []
         for stage in stages:
             production = stage.production
-            # Если это первый этап (order=0) или все предыдущие завершены
             prev_stages = ProductionStage.objects.filter(
                 production=production,
                 order__lt=stage.order
@@ -215,7 +211,7 @@ class MyStagesView(APIView):
             if all_prev_done and stage.status != 'completed':
                 active_stages.append(stage)
 
-        serializer = WorkerStageSerializer(stages, many=True)
+        serializer = WorkerStageSerializer(active_stages, many=True)
         return Response(serializer.data)
 
 class DashboardStatsView(APIView):
@@ -264,3 +260,119 @@ class DashboardStatsView(APIView):
             'recent_productions':  recent_data,
             'low_stock':           list(low_stock),
         })
+    #начать и завершить этап
+class StageActionView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk, action):
+        try:
+            stage = ProductionStage.objects.get(pk=pk)
+        except ProductionStage.DoesNotExist:
+            return Response({'error': 'Этап не найден'}, status=404)
+
+        # Проверяем что это этап данного работника
+        username  = request.user.username
+        full_name = f"{request.user.first_name} {request.user.last_name}".strip()
+        person    = None
+
+        try:
+            person = Person.objects.get(full_name=full_name) if full_name else None
+        except Person.DoesNotExist:
+            pass
+
+        if not person:
+            try:
+                person = Person.objects.get(full_name=username)
+            except Person.DoesNotExist:
+                return Response({'error': 'Сотрудник не найден'}, status=403)
+
+        if stage.assigned_worker != person:
+            return Response({'error': 'Нет доступа к этому этапу'}, status=403)
+
+        now = timezone.now()
+
+        if action == 'start':
+            # Проверяем что предыдущие этапы завершены
+            prev_stages = ProductionStage.objects.filter(
+                production=stage.production,
+                order__lt=stage.order
+            )
+            if prev_stages.exists() and not all(s.status == 'completed' for s in prev_stages):
+                return Response(
+                    {'error': 'Предыдущие этапы ещё не завершены'},
+                    status=400
+                )
+
+            stage.status     = 'in_progress'
+            stage.started_at = now
+            stage.save()
+
+            # Обновляем статус производства
+            production = stage.production
+            production.status              = 'started'
+            production.current_stage_order = stage.order
+            production.save()
+
+            return Response({'success': True, 'message': 'Этап начат'})
+
+        elif action == 'complete':
+            if stage.status != 'in_progress':
+                return Response({'error': 'Этап ещё не начат'}, status=400)
+
+            # Списываем материалы для этого этапа
+            materials_to_writeoff = request.data.get('materials', [])
+
+            with transaction.atomic():
+                for item in materials_to_writeoff:
+                    try:
+                        from inventory.models import Material
+                        material = Material.objects.get(pk=item['material_id'])
+                        qty      = float(item['quantity'])
+
+                        if material.quantity < qty:
+                            return Response(
+                                {'error': f'Недостаточно {material.name}: '
+                                          f'нужно {qty}, на складе {material.quantity}'},
+                                status=400
+                            )
+
+                        material.quantity -= qty
+                        material.save()
+
+                        MaterialTransaction.objects.create(
+                            material=material,
+                            quantity=qty,
+                            transaction_type='out',
+                            comment=f'Списание: этап "{stage.get_stage_type_display()}" '
+                                    f'производства #{stage.production.id}',
+                        )
+                    except Material.DoesNotExist:
+                        pass
+
+                stage.status       = 'completed'
+                stage.completed_at = now
+                stage.save()
+
+                # Проверяем — все ли этапы завершены
+                production    = stage.production
+                all_stages    = ProductionStage.objects.filter(production=production)
+                all_completed = all(s.status == 'completed' for s in all_stages)
+
+                if all_completed:
+                    production.status = 'completed'
+                else:
+                    # Переходим к следующему этапу
+                    next_stage = ProductionStage.objects.filter(
+                        production=production,
+                        order__gt=stage.order,
+                        status='pending'
+                    ).order_by('order').first()
+
+                    if next_stage:
+                        production.current_stage_order = next_stage.order
+
+                production.save()
+
+            return Response({'success': True, 'message': 'Этап завершён'})
+
+        return Response({'error': 'Неизвестное действие'}, status=400)

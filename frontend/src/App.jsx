@@ -12,18 +12,18 @@ import Persons from './pages/admin/Persons';
 import WorkerDashboard from './pages/worker/WorkerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Reports from './pages/admin/Reports';
+import WorkerLayout   from './pages/worker/WorkerLayout';
+import WorkerHome     from './pages/worker/WorkerHome';
+import WorkerTasks    from './pages/worker/WorkerTasks';
+import WorkerCalendar from './pages/worker/WorkerCalendar';
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-
           <Route path="/login" element={<Login />} />
-
-          <Route
-            path="/admin"
-            element={
+          <Route path="/admin" element={
               <PrivateRoute allowedRole="admin">
                 <AdminLayout />
               </PrivateRoute>
@@ -39,16 +39,15 @@ export default function App() {
             <Route path="reports"     element={<Reports />} />
           </Route>
 
-          <Route
-            path="/worker/dashboard"
-            element={
+            <Route path="/worker" element={
               <PrivateRoute allowedRole="worker">
-                <WorkerDashboard />
+                <WorkerLayout />
               </PrivateRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/login" replace />} />
+            }>
+              <Route path="dashboard" element={<WorkerDashboard />} />
+              <Route path="tasks" element={<WorkerTasks />} />
+              <Route path="calendar" element={<WorkerCalendar />} />
+            </Route>
 
         </Routes>
       </BrowserRouter>

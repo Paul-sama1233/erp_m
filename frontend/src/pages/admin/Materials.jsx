@@ -11,7 +11,7 @@ export default function Materials() {
 
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
-
+  const emptyForm = { name: '', unit: '', quantity: 0, price_per_unit: 0, min_quantity: 0, specialization: 'any' };
   const fetchMaterials = async () => {
     const res = await axios.get(`${API}/api/materials/`, { headers });
     setMaterials(res.data);
@@ -57,6 +57,18 @@ export default function Materials() {
             value={form.price_per_unit} onChange={e => setForm({...form, price_per_unit: e.target.value})} />
           <input style={s.input} placeholder="Мин. остаток" type="number" step="0.01"
             value={form.min_quantity}   onChange={e => setForm({...form, min_quantity: e.target.value})} />
+          <div style={s.fieldGroup}>
+              <label style={s.label}>Специализация (кому принадлежит)</label>
+              <select style={s.input}
+                value={form.specialization}
+                onChange={e => setForm({...form, specialization: e.target.value})}>
+                <option value="any">Общие (все)</option>
+                <option value="frame">Каркасник</option>
+                <option value="upholstery">Обивщик</option>
+                <option value="foam">Поролонщик</option>
+                <option value="sewing">Швея</option>
+              </select>
+            </div>
           <button style={s.btn} type="submit">Сохранить</button>
         </form>
       )}
@@ -70,6 +82,7 @@ export default function Materials() {
             <th style={s.th}>Цена за ед.</th>
             <th style={s.th}>Действия</th>
             <th style={s.th}>Минимальное количество</th>
+            <th style={s.th}>Специализация</th>
           </tr>
         </thead>
         <tbody>
@@ -87,6 +100,10 @@ export default function Materials() {
               <td style={s.td}>
                 <button style={s.delBtn} onClick={() => handleDelete(m.id)}>Удалить</button>
               </td>
+              <td style={s.td}>
+              {{ any: 'Общие', frame: 'Каркасник', upholstery: 'Обивщик',
+                 foam: 'Поролонщик', sewing: 'Швея' }[m.specialization] || m.specialization}
+            </td>
             </tr>
           ))}
         </tbody>

@@ -7,7 +7,7 @@ from .views import (
     ProductViewSet, ProductMaterialViewSet,
     PersonViewSet, ProductionViewSet, ProductionStageViewSet,
     ContractViewSet, ContractProductViewSet,
-    MyStagesView, DashboardStatsView,
+    MyStagesView, DashboardStatsView, StageActionView
 )
 
 router = DefaultRouter()
@@ -30,4 +30,5 @@ urlpatterns = [
     path('my-stages/', MyStagesView.as_view()),
     path('', include(router.urls)),
     path('dashboard-stats/', DashboardStatsView.as_view()),
+    path('stages/<int:pk>/<str:action>/', StageActionView.as_view()),
 ]

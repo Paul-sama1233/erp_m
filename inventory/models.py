@@ -3,20 +3,23 @@ from core.models import Person
 
 
 class Material(models.Model):
-    """materials"""
+    SPECIALIZATION_CHOICES = [
+        ('frame',      'Каркасник'),
+        ('sewing',     'Швея'),
+        ('foam',       'Поролонщик'),
+        ('upholstery', 'Обивщик'),
+        ('any',        'Общий (для всех)'),
+    ]
     name = models.CharField(max_length=255, verbose_name="Название")
     unit = models.CharField(max_length=50, verbose_name="Единица измерения")
-    quantity = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0,
-        verbose_name="Количество на складе"
-    )
-    min_quantity = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0,
-        verbose_name="Минимальный остаток"
-    )
-    price_per_unit = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0,
-        verbose_name="Цена за единицу"
+    quantity       = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    min_quantity   = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    price_per_unit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    specialization = models.CharField(
+        max_length=20,
+        choices=SPECIALIZATION_CHOICES,
+        default='any',
+        verbose_name="Для кого предназначен"
     )
 
     class Meta:

@@ -46,22 +46,34 @@ class Role(models.Model):
         return self.name
 
 
-class Person(models.Model):
-    SPECIALIZATION_CHOICES = [
+class Specialization(models.Model):
+    CHOICES = [
         ('frame',      'Каркасник'),
         ('springs',    'Пружинщик / Механик'),
         ('sewing',     'Швея'),
         ('foam',       'Поролонщик'),
         ('upholstery', 'Обивщик'),
-        ('none',       'Без специализации'),
     ]
+    code = models.CharField(max_length=20, choices=CHOICES, unique=True)
+
+    def __str__(self):
+        return dict(self.CHOICES).get(self.code, self.code)
+
+class Person(models.Model):
     full_name       = models.CharField(max_length=255, verbose_name="ФИО")
-    phone           = models.CharField(max_length=50, blank=True, verbose_name="Телефон")
-    specialization  = models.CharField(
-        max_length=20, choices=SPECIALIZATION_CHOICES,
-        default='none', verbose_name="Специализация"
+    phone           = models.CharField(max_length=50, blank=True)
+    specialization = models.CharField(
+        max_length=20,
+        choices=Specialization.CHOICES,  # берём из существующей модели
+        default='none',
+        verbose_name="Специализация"
     )
-    roles = models.ManyToManyField(Role, through='PersonRole', verbose_name="Роли")
+
+    # Оставляем ManyToMany на будущее (если понадобится несколько специализаций)
+    specializations = models.ManyToManyField(
+        Specialization, blank=True, verbose_name="Специализации"
+    )
+    roles      = models.ManyToManyField(Role, through='PersonRole', verbose_name="Роли")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -69,7 +81,14 @@ class Person(models.Model):
         verbose_name_plural = "Сотрудники"
 
     def __str__(self):
-        return f"{self.full_name} ({self.get_specialization_display()})"
+        return self.full_name
+
+    def get_specialization_codes(self):
+        return list(self.specializations.values_list('code', flat=True))
+
+
+    def get_specialization_display(self):
+        return dict(Specialization.CHOICES).get(self.specialization, self.specialization)
 
 
 class PersonRole(models.Model):

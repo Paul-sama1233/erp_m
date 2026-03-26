@@ -10,7 +10,8 @@ class ContractProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContractProduct
         fields = ['id', 'contract', 'product', 'product_name',
-                  'quantity', 'price', 'production_date', 'status']
+                  'quantity', 'price', 'production_date']
+
 class ContractSerializer(serializers.ModelSerializer):
     items = ContractProductSerializer(many=True, read_only=True)
 
@@ -38,7 +39,8 @@ class UserSerializer(serializers.ModelSerializer):
 class MaterialSerializer(serializers.ModelSerializer):
     class Meta:
         model = Material
-        fields = ['id', 'name', 'unit', 'quantity', 'price_per_unit', 'min_quantity']
+        fields = ['id', 'name', 'unit', 'quantity', 'price_per_unit', 'min_quantity',
+                  'specialization']
 
 
 class MaterialTransactionSerializer(serializers.ModelSerializer):
@@ -98,23 +100,58 @@ class ProductionSerializer(serializers.ModelSerializer):
         ]
 
 class PersonSerializer(serializers.ModelSerializer):
+    specialization_label = serializers.CharField(
+        source='get_specialization_display', read_only=True
+    )
     class Meta:
         model = Person
-        fields = ['id', 'full_name', 'phone', 'specialization']
+        fields = ['id', 'full_name', 'phone', 'specialization','specialization_label',]
+
 
 class WorkerStageSerializer(serializers.ModelSerializer):
     assigned_worker_name = serializers.CharField(
         source='assigned_worker.full_name', read_only=True
     )
     product_name = serializers.CharField(
-        source='production.product.name', read_only=True)
-    production_date = serializers.DateField(
-        source='production.created_at',read_only=True)
+        source='production.product.name', read_only=True
+    )
+
+    # Исправлено: используем DateTimeField + format, чтобы безопасно взять только дату
+    production_date = serializers.DateTimeField(
+        source='production.created_at',
+        format='%Y-%m-%d',  # возвращаем только дату в формате YYYY-MM-DD
+        read_only=True
+    )
+
+    production_status = serializers.CharField(
+        source='production.status', read_only=True
+    )
+    available_materials = serializers.SerializerMethodField()
+
+    def get_available_materials(self, obj):
+        # Берём specialization из Person (теперь оно есть)
+        specialization = obj.assigned_worker.specialization if hasattr(obj.assigned_worker,
+                                                                       'specialization') else 'none'
+
+        product_materials = obj.production.product.materials.all()
+        result = []
+        for pm in product_materials:
+            mat = pm.material
+            if mat.specialization == specialization or mat.specialization == 'any':
+                result.append({
+                    'id': mat.id,
+                    'name': mat.name,
+                    'unit': mat.unit,
+                    'quantity': str(mat.quantity),
+                    'needed': str(pm.quantity),
+                })
+        return result
 
     class Meta:
         model = ProductionStage
         fields = [
-            'id','production', 'stage_type', 'assigned_worker',
+            'id', 'production', 'stage_type', 'assigned_worker',
             'assigned_worker_name', 'product_name', 'production_date',
-            'status', 'started_at', 'completed_at'
+            'production_status', 'status', 'started_at', 'completed_at',
+            'order', 'available_materials'
         ]
