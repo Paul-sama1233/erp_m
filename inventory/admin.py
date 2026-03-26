@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import Material, MaterialTransaction, Product, ProductMaterial
 
-# Register your models here.
+admin.site.register(Material)
+admin.site.register(MaterialTransaction)
+admin.site.register(Product)
+admin.site.register(ProductMaterial)
