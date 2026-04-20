@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Договор №{{ contract_id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm 15mm 25mm 15mm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: #1a1a1a;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #b91c1c;
+        }
+        .contacts {
+            text-align: right;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        h1 {
+            text-align: center;
+            font-size: 18px;
+            margin: 20px 0 5px;
+        }
+        .contract-number {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .section-title {
+            font-weight: bold;
+            margin-top: 25px;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+        .signature-block {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .footer {
+            position: fixed;
+            bottom: -20mm;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 11px;
+            color: #444;
+            border-top: 1px solid #ddd;
+            padding-top: 8px;
+        }
+        strong { font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">WALLMANN</div>
+        <div class="contacts">
+            <div>+99897 402 55 48</div>
+            <div>+99897 402 55 49</div>
+            <div>info@wallmann.uz</div>
+            <div>wallmann.uz</div>
+        </div>
+    </div>
+
+    <div class="contract-number">Договор №{{ contract_id }}</div>
+    <h1>НА СБОРКУ МЕБЕЛИ ПО ИНДИВИДУАЛЬНОМУ ЗАКАЗУ</h1>
+
+    <p>г. Ташкент &nbsp;&nbsp;&nbsp; {{ today }} г.</p>
+
+    <p>ЧП Lavrov Stepan Evgenievich, именуемый в дальнейшем «Исполнитель» с одной стороны и
+    <strong>{{ client_name }}</strong>, именуемый(ая) в дальнейшем «Заказчик», с другой стороны,
+    вместе именуемые «Стороны», заключили настоящий договор о нижеследующем.</p>
+
+    <div class="section-title">1. ПРЕДМЕТ ДОГОВОРА</div>
+    <p>1.1. Исполнитель обязуется выполнить работы по сборке мебели <strong>({{ items_list }})</strong> и передать результат работы Заказчику, а Заказчик обязуется принять и оплатить Изделие в соответствии с эскизом (Приложение №1).</p>
+    <p>1.4. Доставка и установка мебели осуществляется по адресу: <strong>{{ address }}</strong></p>
+
+    <div class="section-title">2. СТОИМОСТЬ РАБОТ И ПОРЯДОК РАСЧЕТА</div>
+    <p>Общая стоимость изделия составляет: <strong>{{ total_price }} сум</strong>.</p>
+    <p>2.2. Заказчик осуществляет предоплату в размере <strong>{{ prepayment }} сум</strong> (не менее 80%).</p>
+    <p>2.3. Окончательный платеж в размере <strong>{{ final_payment }} сум</strong> оплачивается в день выполнения обязательств.</p>
+
+    <div class="section-title">3. СРОКИ ВЫПОЛНЕНИЯ И УСЛОВИЯ МОНТАЖА</div>
+    <p>3.1. Срок выполнения — <strong>30 рабочих дней</strong> с момента предоплаты.</p>
+    <!-- Добавь остальной текст из твоего примера, если нужно -->
+
+    <div class="section-title">4. ПРИЕМ-ПЕРЕДАЧА МЕБЕЛИ</div>
+    <p>4.1. Прием-сдача производится согласно эскизу в присутствии сторон.</p>
+
+    <div class="signature-block">
+        <div>
+            <p>Исполнитель _________________________</p>
+            <p>ЧП Lavrov Stepan Evgenievich</p>
+        </div>
+        <div>
+            <p>Заказчик _________________________</p>
+            <p>{{ client_name }}</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        г. Ташкент, Яшнабадский район, ул. 1-я Мавлона Риёзий, д. 31.
+    </div>
+</body>
+</html>

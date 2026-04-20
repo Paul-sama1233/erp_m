@@ -19,6 +19,12 @@ export default function Contracts() {
   });
   const [showItemForm, setShowItemForm] = useState(null);
 
+  // Новое состояние для проверки адреса
+  const [addressCheck, setAddressCheck] = useState({
+    loading: false,
+    result: null,      // {valid, message, formatted_address, coordinates}
+    error: null
+  });
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
   const refresh = () => setRefreshKey(k => k + 1);
@@ -35,6 +41,35 @@ export default function Contracts() {
 
   useEffect(() => { fetchAll(); }, [refreshKey]);
 
+  const checkAddress = async () => {
+    const address = form.address.trim();
+    if (!address) {
+      setAddressCheck({ loading: false, result: null, error: "Введите адрес" });
+      return;
+    }
+
+    setAddressCheck({ loading: true, result: null, error: null });
+
+    try {
+      const res = await axios.get(`${API}/api/contracts/validate-address/`, {
+        headers,
+        params: { q: address }
+      });
+
+      setAddressCheck({
+        loading: false,
+        result: res.data,
+        error: null
+      });
+    } catch (err) {
+      setAddressCheck({
+        loading: false,
+        result: null,
+        error: err.response?.data?.message || "Ошибка проверки адреса"
+      });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (editingId) {
@@ -47,20 +82,18 @@ export default function Contracts() {
     setEditingId(null);
     refresh();
   };
+
   const handleStartProduction = async (item, contractId) => {
-  // Помечаем позицию как "в производстве"
-  await axios.patch(`${API}/api/contract-products/${item.id}/`,
-    { status: 'in_progress' },
-    { headers }
-  );
-  // Создаём производство автоматически
-  await axios.post(`${API}/api/productions/`, {
-    product: item.product,
-    contract: contractId,
-  }, { headers });
-  refresh();
-  alert(`✅ Производство для "${item.product_name}" запущено!`);
- };
+    await axios.patch(`${API}/api/contract-products/${item.id}/`,
+      { status: 'in_progress' }, { headers }
+    );
+    await axios.post(`${API}/api/productions/`, {
+      product: item.product,
+      contract: contractId,
+    }, { headers });
+    refresh();
+    alert(`✅ Производство для "${item.product_name}" запущено!`);
+  };
 
   const handleDelete = async (id) => {
     if (!confirm('Удалить договор?')) return;
@@ -94,18 +127,27 @@ export default function Contracts() {
     setShowForm(true);
   };
 
+  // Новые функции для скачивания документов
+ const downloadContract = (contractId) => {
+    window.open(`${API}/api/contracts/${contractId}/generate/pdf/`, '_blank');
+  };
+
   if (loading) return <p style={{ padding: 40 }}>Загрузка...</p>;
 
   return (
     <div style={s.page}>
       <div style={s.header}>
         <h2 style={s.title}>Договоры</h2>
-        <button style={s.btn} onClick={() => { setShowForm(!showForm); setEditingId(null); setForm(emptyForm); }}>
+        <button style={s.btn} onClick={() => {
+          setShowForm(!showForm);
+          setEditingId(null);
+          setForm(emptyForm);
+        }}>
           + Новый договор
         </button>
       </div>
 
-      {showForm && (
+{showForm && (
         <form onSubmit={handleSubmit} style={s.form}>
           <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>
             {editingId ? 'Редактировать договор' : 'Новый договор'}
@@ -125,27 +167,66 @@ export default function Contracts() {
             </div>
             <div style={s.fieldGroup}>
               <label style={s.label}>Адрес</label>
-              <input style={s.input} placeholder="г. Ташкент, ул. Навои 1"
-                value={form.address}
-                onChange={e => setForm({ ...form, address: e.target.value })} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input style={s.input} placeholder="г. Ташкент, ул. Навои, 1"
+                  value={form.address}
+                  onChange={e => setForm({ ...form, address: e.target.value })} />
+                <button
+                  type="button"
+                  style={s.checkBtn}
+                  onClick={checkAddress}
+                  disabled={addressCheck.loading || !form.address.trim()}>
+                  {addressCheck.loading ? 'Проверка...' : 'Проверить'}
+                </button>
+              </div>
+
+              {/* Результат проверки адреса */}
+              {addressCheck.result && (
+                <div style={{
+                  marginTop: 8,
+                  padding: 10,
+                  borderRadius: 8,
+                  background: addressCheck.result.valid ? '#dcfce7' : '#fee2e2',
+                  color: addressCheck.result.valid ? '#166534' : '#991b1b',
+                  fontSize: 13
+                }}>
+                  {addressCheck.result.message}
+                  {addressCheck.result.formatted_address && (
+                    <div style={{ marginTop: 4, fontWeight: 500 }}>
+                      {addressCheck.result.formatted_address}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {addressCheck.error && (
+                <div style={{ marginTop: 8, color: '#dc2626', fontSize: 13 }}>
+                  {addressCheck.error}
+                </div>
+              )}
             </div>
           </div>
+
           <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button style={s.btn} type="submit">
               {editingId ? 'Сохранить' : 'Создать договор'}
             </button>
             <button style={s.cancelBtn} type="button"
-              onClick={() => { setShowForm(false); setEditingId(null); }}>
+              onClick={() => {
+                setShowForm(false);
+                setEditingId(null);
+                setAddressCheck({ loading: false, result: null, error: null });
+              }}>
               Отмена
             </button>
           </div>
         </form>
       )}
-
       <div style={s.list}>
         {contracts.length === 0 && (
           <div style={s.empty}>Договоров пока нет</div>
         )}
+
         {contracts.map(c => (
           <div key={c.id} style={s.card}>
             <div style={s.cardHeader}>
@@ -157,7 +238,8 @@ export default function Contracts() {
                   {new Date(c.created_at).toLocaleDateString('ru-RU')}
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
+
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button style={s.expandBtn}
                   onClick={() => setExpanded(expanded === c.id ? null : c.id)}>
                   {expanded === c.id ? '▲ Скрыть' : '▼ Позиции'} ({c.items.length})
@@ -169,6 +251,15 @@ export default function Contracts() {
                   Удалить
                 </button>
               </div>
+            </div>
+
+            {/* Кнопки скачивания договоров */}
+            <div style={{ padding: '0 20px 12px', display: 'flex', gap: 8 }}>
+          <button
+            style={s.generatePdfBtn}
+            onClick={() => downloadContract(c.id, 'pdf')}>
+            📕 Скачать PDF договор
+          </button>
             </div>
 
             {expanded === c.id && (
@@ -187,73 +278,70 @@ export default function Contracts() {
                   <tbody>
                     {c.items.length === 0 && (
                       <tr>
-                        <td colSpan={5} style={{ padding: 12, color: '#aaa', textAlign: 'center' }}>
+                        <td colSpan={6} style={{ padding: 20, color: '#aaa', textAlign: 'center' }}>
                           Позиций нет
                         </td>
                       </tr>
                     )}
-            {c.items.map(item => (
-              <tr key={item.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                <td style={s.td}>{item.product_name}</td>
-                <td style={s.td}>{item.quantity} шт.</td>
-                <td style={s.td}>{Number(item.price).toLocaleString()} сум</td>
-                <td style={s.td}>
-                  {item.production_date
-                    ? new Date(item.production_date).toLocaleDateString('ru-RU')
-                    : '—'}
-                </td>
-                <td style={s.td}>
-                  <span style={{
-                    padding: '3px 10px', borderRadius: 20, fontWeight: 600, fontSize: 12,
-                    background: item.status === 'completed'  ? '#dcfce7' :
-                                item.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
-                    color:      item.status === 'completed'  ? '#16a34a' :
-                                item.status === 'in_progress' ? '#1d4ed8' : '#888',
-                  }}>
-                    {item.status === 'completed'  ? '✅ Выполнено'      :
-                     item.status === 'in_progress' ? '🔨 В производстве' : '⏳ Ожидает'}
-                  </span>
-                </td>
-                <td style={s.td}>
-                  {item.status === 'pending' && (
-                    <button style={s.startBtn} onClick={() => handleStartProduction(item, c.id)}>
-                      ▶ В производство
-                    </button>
-                  )}
-                  <button style={s.delBtn} onClick={() => handleRemoveItem(item.id)}>
-                    Удалить
-                  </button>
-                </td>
-              </tr>
+                    {c.items.map(item => (
+                      <tr key={item.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={s.td}>{item.product_name}</td>
+                        <td style={s.td}>{item.quantity} шт.</td>
+                        <td style={s.td}>{Number(item.price).toLocaleString()} сум</td>
+                        <td style={s.td}>
+                          {item.production_date
+                            ? new Date(item.production_date).toLocaleDateString('ru-RU')
+                            : '—'}
+                        </td>
+                        <td style={s.td}>
+                          <span style={{
+                            padding: '3px 10px', borderRadius: 20, fontWeight: 600, fontSize: 12,
+                            background: item.status === 'completed' ? '#dcfce7' :
+                                        item.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
+                            color: item.status === 'completed' ? '#16a34a' :
+                                   item.status === 'in_progress' ? '#1d4ed8' : '#888',
+                          }}>
+                            {item.status === 'completed' ? '✅ Выполнено' :
+                             item.status === 'in_progress' ? '🔨 В производстве' : '⏳ Ожидает'}
+                          </span>
+                        </td>
+                        <td style={s.td}>
+                          {item.status === 'pending' && (
+                            <button style={s.startBtn} onClick={() => handleStartProduction(item, c.id)}>
+                              ▶ В производство
+                            </button>
+                          )}
+                          <button style={s.delBtn} onClick={() => handleRemoveItem(item.id)}>
+                            Удалить
+                          </button>
+                        </td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
 
                 {showItemForm === c.id ? (
                   <form onSubmit={(e) => handleAddItem(e, c.id)} style={s.itemForm}>
-                    <select style={s.select} required
-                      value={itemForm.product}
+                    <select style={s.select} required value={itemForm.product}
                       onChange={e => setItemForm({ ...itemForm, product: e.target.value })}>
                       <option value="">— Изделие —</option>
                       {products.map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>
-                    <input style={{ ...s.input, width: 80 }}
-                      type="number" min="1" placeholder="Кол-во"
+                    <input style={{ ...s.input, width: 80 }} type="number" min="1" placeholder="Кол-во"
                       value={itemForm.quantity}
                       onChange={e => setItemForm({ ...itemForm, quantity: e.target.value })} />
-                    <input style={{ ...s.input, width: 140 }}
-                      type="number" placeholder="Цена (сум)" required
+                    <input style={{ ...s.input, width: 140 }} type="number" placeholder="Цена (сум)" required
                       value={itemForm.price}
                       onChange={e => setItemForm({ ...itemForm, price: e.target.value })} />
-                    <input style={{ ...s.input, width: 160 }}
-                      type="date"
+                    <input style={{ ...s.input, width: 160 }} type="date"
                       value={itemForm.production_date}
                       onChange={e => setItemForm({ ...itemForm, production_date: e.target.value })} />
                     <button style={s.btn} type="submit">+ Добавить</button>
-                    <button style={s.cancelBtn} type="button"
-                      onClick={() => setShowItemForm(null)}>Отмена</button>
+                    <button style={s.cancelBtn} type="button" onClick={() => setShowItemForm(null)}>
+                      Отмена
+                    </button>
                   </form>
                 ) : (
                   <button style={{ ...s.expandBtn, marginTop: 12 }}
@@ -270,6 +358,7 @@ export default function Contracts() {
   );
 }
 
+// ==================== СТИЛИ ====================
 const s = {
   page:       { padding: 32 },
   header:     { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
@@ -284,6 +373,15 @@ const s = {
                 borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
   expandBtn:  { background: '#f0f0ff', color: '#4f46e5', border: 'none', padding: '6px 14px',
                 borderRadius: 6, cursor: 'pointer', fontWeight: 500, fontSize: 13 },
+  generatePdfBtn: {
+    background: '#ef4444', color: '#fff', border: 'none', padding: '8px 16px',
+    borderRadius: 6, cursor: 'pointer', fontWeight: 500, fontSize: 13
+  },
+  checkBtn: {
+    background: '#3b82f6', color: '#fff', border: 'none', padding: '10px 16px',
+    borderRadius: 8, cursor: 'pointer', fontWeight: 500, fontSize: 14,
+    whiteSpace: 'nowrap'
+  },
   form:       { background: '#f8f8ff', padding: 24, borderRadius: 12,
                 marginBottom: 24, border: '1px solid #e0e0f0' },
   formGrid:   { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 },

@@ -16,12 +16,17 @@ class CustomUser(AbstractUser):
         ('upholstery', 'Обивщик'),
         ('none', 'Без специализации'),
     ]
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='worker')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES,
+    default='worker', verbose_name="Роль")
     specialization = models.CharField(
         max_length=20, choices=SPECIALIZATION_CHOICES,
         default='none', verbose_name="Специализация"
     )
-
+    def save(self, *args, **kwargs):
+        # Суперюзер автоматически становится админом
+        if self.is_superuser:
+            self.role = 'admin'
+        super().save(*args, **kwargs)
     class Meta:
         verbose_name = "Аккаунт"
         verbose_name_plural = "Аккаунты"

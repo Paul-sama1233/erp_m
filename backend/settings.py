@@ -87,7 +87,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'erp_m',
         'USER': 'postgres',
-        'PASSWORD': 'admin',
+        'PASSWORD': 'ubuntu',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -151,3 +151,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ============== LOCATIONIQ ==========
+LOCATIONIQ_API_KEY = 'pk.d94e3a4f150d56f60d449d83a1adaa52'

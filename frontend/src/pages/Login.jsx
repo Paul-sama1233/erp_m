@@ -40,7 +40,7 @@ export default function Login() {
               type="text"
               value={form.username}
               onChange={e => setForm({ ...form, username: e.target.value })}
-              placeholder="admin"
+              placeholder="Введите логин"
               required
             />
           </div>
@@ -52,7 +52,7 @@ export default function Login() {
               type="password"
               value={form.password}
               onChange={e => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••••"
+              placeholder="Введите пароль"
               required
             />
           </div>
