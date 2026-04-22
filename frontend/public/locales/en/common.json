@@ -1,0 +1,370 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "error": "Error",
+    "hide": "▲ Hide",
+    "showPositions": "▼ Items",
+    "quantity": "Qty",
+    "price": "Price",
+    "units": {
+      "pcs": "pcs."
+    },
+    "currency": "UZS"
+  },
+
+  "dashboard": {
+    "title": "Workshop Overview",
+    "materials_total": "Materials in Stock",
+    "low_stock": "Low Stock",
+    "products": "Products",
+    "productions": "Productions"
+  },
+
+  "stages": {
+    "frame": "Frame",
+    "springs": "Springs / Mechanisms",
+    "sewing": "Sewing",
+    "foam": "Foam",
+    "upholstery": "Upholstery"
+  },
+
+  "status": {
+    "pending": "Pending",
+    "in_progress": "In Progress",
+    "completed": "Completed"
+  },
+
+  "specializations": {
+    "frame": "Framer",
+    "springs": "Spring Specialist / Mechanic",
+    "sewing": "Seamstress",
+    "foam": "Foam Specialist",
+    "upholstery": "Upholsterer",
+    "none": "No Specialization"
+  },
+
+  "worker": {
+    "layout": {
+      "role": "Workshop Worker",
+      "menu": {
+        "dashboard": "Home",
+        "tasks": "Products",
+        "calendar": "Calendar"
+      },
+      "buttons": {
+        "logout": "Logout"
+      }
+    },
+    "dashboard": {
+      "greeting": "Welcome, {{name}}!",
+      "subtitle": "Your production tasks",
+      "stats": {
+        "pending": "Pending",
+        "inProgress": "In Progress",
+        "completed": "Completed"
+      },
+      "section": {
+        "inProgress": "🔨 Currently in progress",
+        "pending": "⏳ Waiting to start",
+        "completed": "✅ Completed"
+      },
+      "modal": {
+        "title": "Complete: {{stage}}",
+        "description": "Specify the quantity of materials to write off",
+        "noMaterials": "No materials to write off",
+        "stock": "In stock:",
+        "norm": "Norm:"
+      },
+      "empty": {
+        "noTasks": "No assigned tasks"
+      },
+      "buttons": {
+        "start": "▶ Start stage",
+        "complete": "✅ Complete stage",
+        "cancel": "Cancel",
+        "logout": "Logout",
+        "starting": "Starting...",
+        "completing": "Completing..."
+      }
+    },
+    "tasks": {
+      "title": "My Products",
+      "section": {
+        "active": "Active tasks",
+        "completed": "Completed"
+      },
+      "modal": {
+        "title": "Complete: {{stage}}",
+        "product": "Product",
+        "noMaterials": "No materials to write off",
+        "stock": "Stock:",
+        "norm": "Norm:"
+      },
+      "empty": {
+        "noTasks": "No assigned tasks"
+      },
+      "buttons": {
+        "start": "▶ Start stage",
+        "complete": "✅ Complete stage",
+        "cancel": "Cancel",
+        "starting": "Starting...",
+        "completing": "Completing..."
+      }
+    },
+    "calendar": {
+      "title": "Production Calendar",
+      "noTasks": "No scheduled tasks"
+    },
+    "home": {
+      "roleLabel": "Role:",
+      "roleValue": "Workshop Worker",
+      "specializationLabel": "Specialization:"
+    }
+  },
+
+  "admin": {
+    "layout": {
+      "role": "Administrator",
+      "menu": {
+        "dashboard": "Home",
+        "materials": "Materials",
+        "products": "Products",
+        "productions": "Production",
+        "contracts": "Contracts",
+        "supply": "Supply",
+        "persons": "Staff",
+        "reports": "Reports"
+      },
+      "buttons": {
+        "logout": "Logout"
+      }
+    },
+    "contracts": {
+      "title": "Contracts",
+      "buttons": {
+        "newContract": "+ New Contract",
+        "downloadPdf": "Download PDF Contract",
+        "startProduction": "To Production",
+        "addItem": "+ Add Item"
+      },
+      "form": {
+        "newTitle": "New Contract",
+        "editTitle": "Edit Contract",
+        "clientName": "Client Name",
+        "phone": "Phone",
+        "address": "Address",
+        "selectProduct": "— Product —"
+      },
+      "table": {
+        "product": "Product",
+        "quantity": "Qty",
+        "price": "Price",
+        "productionDate": "Production Date",
+        "status": "Status",
+        "actions": "Actions",
+        "noItems": "No items"
+      },
+      "address": {
+        "errorEmpty": "Enter address",
+        "errorCheck": "Address check error",
+        "checking": "Checking...",
+        "check": "Check"
+      },
+      "confirm": {
+        "deleteContract": "Delete contract?",
+        "deleteItem": "Delete item?"
+      },
+      "alert": {
+        "productionStarted": "✅ Production for \"{{product}}\" started!"
+      },
+      "empty": "No contracts yet"
+    },
+    "materials": {
+      "title": "Materials in Stock",
+      "buttons": {
+        "add": "+ Add Material"
+      },
+      "form": {
+        "name": "Name",
+        "unit": "Unit (kg, m², pcs)",
+        "quantity": "Quantity",
+        "pricePerUnit": "Price per unit",
+        "minQuantity": "Min. stock",
+        "specialization": "Specialization (who uses it)"
+      },
+      "table": {
+        "name": "Name",
+        "unit": "Unit",
+        "quantity": "Quantity",
+        "price": "Price per unit",
+        "actions": "Actions",
+        "minQuantity": "Minimum Quantity",
+        "specialization": "Specialization"
+      },
+      "confirm": {
+        "delete": "Delete material?"
+      },
+      "empty": "No materials yet"
+    },
+    "persons": {
+      "title": "Workshop Staff",
+      "buttons": {
+        "add": "+ Add Staff"
+      },
+      "form": {
+        "newTitle": "New Staff Member",
+        "editTitle": "Edit",
+        "fullName": "Full Name",
+        "phone": "Phone",
+        "specialization": "Specialization"
+      },
+      "confirm": {
+        "delete": "Delete staff member?"
+      },
+      "empty": "No staff yet"
+    },
+    "productions": {
+      "title": "Production",
+      "buttons": {
+        "new": "+ Start Production",
+        "create": "Start",
+        "showStages": "▼ Stages",
+        "complete": "✅ Complete",
+        "completing": "Completing...",
+        "addStage": "+ Assign Stage"
+      },
+      "form": {
+        "newTitle": "New Production",
+        "product": "Product",
+        "selectProduct": "— Select Product —",
+        "contract": "Contract (optional)",
+        "noContract": "— No Contract —",
+        "selectStage": "— Stage —",
+        "selectWorker": "— Worker —",
+        "order": "Order"
+      },
+      "table": {
+        "stage": "Stage",
+        "worker": "Worker",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "confirm": {
+        "complete": "Complete production? Materials will be written off from stock.",
+        "delete": "Delete production?",
+        "deleteStage": "Delete this stage?"
+      },
+      "alert": {
+        "completed": "✅ Production completed, materials written off!",
+        "insufficientMaterials": "❌ Insufficient materials:",
+        "error": "Error completing production"
+      },
+      "empty": "No productions yet"
+    },
+    "products": {
+      "title": "Products",
+      "buttons": {
+        "add": "+ Add Product",
+        "create": "Create Product",
+        "showMaterials": "▼ Materials",
+        "remove": "Remove"
+      },
+      "form": {
+        "newTitle": "New Product",
+        "editTitle": "Edit Product",
+        "name": "Product Name",
+        "namePlaceholder": "Milan Sofa, Classic Kitchen...",
+        "price": "Sale Price (UZS)",
+        "selectMaterial": "— Select Material —"
+      },
+      "table": {
+        "material": "Material",
+        "quantity": "Qty per 1 product",
+        "actions": "Actions",
+        "noMaterials": "No materials added"
+      },
+      "confirm": {
+        "delete": "Delete product? All linked materials will also be deleted."
+      },
+      "alert": {
+        "noProductId": "Error: Product ID is not defined"
+      },
+      "empty": "No products yet"
+    },
+    "reports": {
+      "title": "Reports",
+      "tabs": {
+        "materials": "📦 Material Flow",
+        "profit": "💰 Profit by Products",
+        "contracts": "📋 Contracts Statistics"
+      },
+      "materials": {
+        "writeOffs": "Write-offs",
+        "supplies": "Supplies",
+        "totalTransactions": "Total Transactions",
+        "supply": "+ Supply",
+        "writeOff": "- Write-off",
+        "table": {
+          "date": "Date",
+          "material": "Material",
+          "type": "Type",
+          "quantity": "Quantity",
+          "comment": "Comment"
+        }
+      },
+      "profit": {
+        "productsProduced": "Products Produced",
+        "totalRevenue": "Total Revenue",
+        "table": {
+          "product": "Product",
+          "price": "Sale Price",
+          "count": "Production Count",
+          "revenue": "Revenue"
+        }
+      },
+      "contracts": {
+        "totalContracts": "Total Contracts",
+        "itemsOrdered": "Items Ordered",
+        "totalAmount": "Total Amount",
+        "table": {
+          "client": "Client",
+          "phone": "Phone",
+          "date": "Date",
+          "items": "Items",
+          "amount": "Amount"
+        }
+      },
+      "empty": "No data"
+    },
+    "supply": {
+      "title": "Material Supply",
+      "buttons": {
+        "new": "+ New Supply",
+        "submit": "Accept Supply"
+      },
+      "form": {
+        "title": "Accept Supply",
+        "material": "Material",
+        "selectMaterial": "— Select Material —",
+        "stock": "(stock: {{quantity}} {{unit}})",
+        "quantity": "Quantity",
+        "quantityPlaceholder": "Enter quantity",
+        "comment": "Comment (supplier, invoice)",
+        "commentPlaceholder": "Supplier Akhmadov, invoice #123"
+      },
+      "table": {
+        "date": "Date",
+        "material": "Material",
+        "quantity": "Quantity",
+        "comment": "Comment"
+      },
+      "empty": "No supplies yet"
+    }
+  }
+}

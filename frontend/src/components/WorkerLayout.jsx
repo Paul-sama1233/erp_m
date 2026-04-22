@@ -1,14 +1,16 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // ← Добавлен импорт
 
 const menuItems = [
-  { path: '/worker/dashboard', label: 'Главная',  icon: '🏠' },
-  { path: '/worker/tasks',     label: 'Изделия',  icon: '🪑' },
-  { path: '/worker/calendar',  label: 'Календарь', icon: '📅' },
+  { path: '/worker/dashboard', key: 'dashboard',  icon: '🏠' },
+  { path: '/worker/tasks',     key: 'tasks',      icon: '🪑' },
+  { path: '/worker/calendar',  key: 'calendar',   icon: '📅' },
 ];
 
 export default function WorkerLayout() {
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation(); // ← Инициализация хука
   const navigate  = useNavigate();
   const location  = useLocation();
 
@@ -19,9 +21,10 @@ export default function WorkerLayout() {
           <div style={s.avatar}>{user?.username?.charAt(0).toUpperCase()}</div>
           <div>
             <div style={s.username}>{user?.username}</div>
-            <div style={s.role}>Работник цеха</div>
+            <div style={s.role}>{t('worker.layout.role')}</div>
           </div>
         </div>
+
         <nav style={s.nav}>
           {menuItems.map(item => (
             <button key={item.path}
@@ -31,14 +34,31 @@ export default function WorkerLayout() {
               }}
               onClick={() => navigate(item.path)}>
               <span style={s.icon}>{item.icon}</span>
-              {item.label}
+              {t(`worker.layout.menu.${item.key}`)}
             </button>
           ))}
         </nav>
-        <button style={s.logoutBtn} onClick={() => { logout(); navigate('/login'); }}>
-          Выйти
-        </button>
+
+        <div style={s.bottom}>
+          {/* Выбор языка */}
+          <div style={s.langSwitcher}>
+            <select
+              style={s.langSelect}
+              value={i18n.language}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+            >
+              <option value="ru" style={{color: '#000'}}>Русский</option>
+              <option value="uz" style={{color: '#000'}}>O'zbek</option>
+              <option value="en" style={{color: '#000'}}>English</option>
+            </select>
+          </div>
+
+          <button style={s.logoutBtn} onClick={() => { logout(); navigate('/login'); }}>
+            {t('worker.layout.buttons.logout')}
+          </button>
+        </div>
       </aside>
+
       <main style={s.main}>
         <Outlet />
       </main>
@@ -66,8 +86,16 @@ const s = {
                  fontWeight: 500, textAlign: 'left' },
   navItemActive:{ background: 'rgba(255,255,255,0.15)', color: '#fff' },
   icon:        { fontSize: 18, width: 24, textAlign: 'center' },
-  logoutBtn:   { margin: '16px 12px 0', padding: '10px', borderRadius: 8,
+
+  /* Новые стили для нижней части панели */
+  bottom:      { padding: '16px 12px 0', marginTop: 'auto' },
+  langSwitcher:{ marginBottom: 12 },
+  langSelect:  { width: '100%', padding: '8px 12px', borderRadius: 8,
+                 border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)',
+                 color: '#fff', fontSize: 13, cursor: 'pointer', outline: 'none' },
+  logoutBtn:   { width: '100%', padding: '10px', borderRadius: 8,
                  border: 'none', background: 'rgba(255,255,255,0.1)',
                  color: '#fff', cursor: 'pointer', fontWeight: 500 },
+
   main:        { flex: 1, marginLeft: 240, minHeight: '100vh' },
 };

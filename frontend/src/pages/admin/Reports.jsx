@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next'; // ← Добавлен импорт
 
 const API = 'http://127.0.0.1:8000';
 
 export default function Reports() {
+  const { t } = useTranslation(); // ← Инициализация хука
+
   const [activeTab, setActiveTab]       = useState('materials');
   const [transactions, setTransactions] = useState([]);
   const [contracts, setContracts]       = useState([]);
@@ -20,8 +23,8 @@ export default function Reports() {
       axios.get(`${API}/api/contracts/`, { headers }),
       axios.get(`${API}/api/productions/`, { headers }),
       axios.get(`${API}/api/products/`, { headers }),
-    ]).then(([t, c, p, pr]) => {
-      setTransactions(t.data);
+    ]).then(([t_res, c, p, pr]) => {
+      setTransactions(t_res.data);
       setContracts(c.data);
       setProductions(p.data);
       setProducts(pr.data);
@@ -29,7 +32,7 @@ export default function Reports() {
     });
   }, []);
 
-  if (loading) return <p style={{ padding: 40 }}>Загрузка...</p>;
+  if (loading) return <p style={{ padding: 40 }}>{t('common.loading')}</p>;
 
   // Считаем прибыль по каждому изделию
   const profitByProduct = products.map(product => {
@@ -39,8 +42,8 @@ export default function Reports() {
 
     // Себестоимость = сумма списаний материалов для этого изделия
     const materialCost = transactions
-      .filter(t => t.transaction_type === 'out')
-      .reduce((sum, t) => sum + parseFloat(t.quantity || 0), 0);
+      .filter(t_obj => t_obj.transaction_type === 'out')
+      .reduce((sum, t_obj) => sum + parseFloat(t_obj.quantity || 0), 0);
 
     const revenue = parseFloat(product.price) * productProductions.length;
     const profit  = revenue - materialCost;
@@ -66,18 +69,18 @@ export default function Reports() {
   }));
 
   // Списания материалов
-  const writeOffs = transactions.filter(t => t.transaction_type === 'out');
-  const supplies  = transactions.filter(t => t.transaction_type === 'in');
+  const writeOffs = transactions.filter(t_obj => t_obj.transaction_type === 'out');
+  const supplies  = transactions.filter(t_obj => t_obj.transaction_type === 'in');
 
   const tabs = [
-    { key: 'materials', label: '📦 Движение материалов' },
-    { key: 'profit',    label: '💰 Прибыль по изделиям' },
-    { key: 'contracts', label: '📋 Статистика договоров' },
+    { key: 'materials', label: t('admin.reports.tabs.materials') },
+    { key: 'profit',    label: t('admin.reports.tabs.profit') },
+    { key: 'contracts', label: t('admin.reports.tabs.contracts') },
   ];
 
   return (
     <div style={s.page}>
-      <h2 style={s.title}>Отчёты</h2>
+      <h2 style={s.title}>{t('admin.reports.title')}</h2>
 
       {/* Вкладки */}
       <div style={s.tabs}>
@@ -99,49 +102,49 @@ export default function Reports() {
           <div style={s.summaryRow}>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #ef4444' }}>
               <div style={s.summaryNum}>{writeOffs.length}</div>
-              <div style={s.summaryLabel}>Списаний</div>
+              <div style={s.summaryLabel}>{t('admin.reports.materials.writeOffs')}</div>
             </div>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #16a34a' }}>
               <div style={s.summaryNum}>{supplies.length}</div>
-              <div style={s.summaryLabel}>Поставок</div>
+              <div style={s.summaryLabel}>{t('admin.reports.materials.supplies')}</div>
             </div>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #3b82f6' }}>
               <div style={s.summaryNum}>{transactions.length}</div>
-              <div style={s.summaryLabel}>Всего транзакций</div>
+              <div style={s.summaryLabel}>{t('admin.reports.materials.totalTransactions')}</div>
             </div>
           </div>
 
           <table style={s.table}>
             <thead>
               <tr style={s.thead}>
-                <th style={s.th}>Дата</th>
-                <th style={s.th}>Материал</th>
-                <th style={s.th}>Тип</th>
-                <th style={s.th}>Количество</th>
-                <th style={s.th}>Комментарий</th>
+                <th style={s.th}>{t('admin.reports.materials.table.date')}</th>
+                <th style={s.th}>{t('admin.reports.materials.table.material')}</th>
+                <th style={s.th}>{t('admin.reports.materials.table.type')}</th>
+                <th style={s.th}>{t('admin.reports.materials.table.quantity')}</th>
+                <th style={s.th}>{t('admin.reports.materials.table.comment')}</th>
               </tr>
             </thead>
             <tbody>
               {transactions.length === 0 && (
-                <tr><td colSpan={5} style={s.empty}>Нет данных</td></tr>
+                <tr><td colSpan={5} style={s.empty}>{t('admin.reports.empty')}</td></tr>
               )}
-              {transactions.map(t => (
-                <tr key={t.id} style={s.tr}>
+              {transactions.map(t_obj => (
+                <tr key={t_obj.id} style={s.tr}>
                   <td style={s.td}>
-                    {new Date(t.created_at).toLocaleDateString('ru-RU')}
+                    {new Date(t_obj.created_at).toLocaleDateString('ru-RU')}
                   </td>
-                  <td style={s.td}>{t.material_name}</td>
+                  <td style={s.td}>{t_obj.material_name}</td>
                   <td style={s.td}>
                     <span style={{
                       ...s.badge,
-                      background: t.transaction_type === 'in' ? '#dcfce7' : '#fee2e2',
-                      color:      t.transaction_type === 'in' ? '#16a34a' : '#dc2626',
+                      background: t_obj.transaction_type === 'in' ? '#dcfce7' : '#fee2e2',
+                      color:      t_obj.transaction_type === 'in' ? '#16a34a' : '#dc2626',
                     }}>
-                      {t.transaction_type === 'in' ? '+ Поставка' : '- Списание'}
+                      {t_obj.transaction_type === 'in' ? t('admin.reports.materials.supply') : t('admin.reports.materials.writeOff')}
                     </span>
                   </td>
-                  <td style={s.td}>{t.quantity}</td>
-                  <td style={s.td}>{t.comment || '—'}</td>
+                  <td style={s.td}>{t_obj.quantity}</td>
+                  <td style={s.td}>{t_obj.comment || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -155,37 +158,37 @@ export default function Reports() {
           <div style={s.summaryRow}>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #4f46e5' }}>
               <div style={s.summaryNum}>{profitByProduct.length}</div>
-              <div style={s.summaryLabel}>Изделий произведено</div>
+              <div style={s.summaryLabel}>{t('admin.reports.profit.productsProduced')}</div>
             </div>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #16a34a' }}>
               <div style={s.summaryNum}>
-                {profitByProduct.reduce((s, p) => s + p.revenue, 0).toLocaleString()} сум
+                {profitByProduct.reduce((s_val, p) => s_val + p.revenue, 0).toLocaleString()} {t('common.currency')}
               </div>
-              <div style={s.summaryLabel}>Общая выручка</div>
+              <div style={s.summaryLabel}>{t('admin.reports.profit.totalRevenue')}</div>
             </div>
           </div>
 
           <table style={s.table}>
             <thead>
               <tr style={s.thead}>
-                <th style={s.th}>Изделие</th>
-                <th style={s.th}>Цена продажи</th>
-                <th style={s.th}>Кол-во производств</th>
-                <th style={s.th}>Выручка</th>
+                <th style={s.th}>{t('admin.reports.profit.table.product')}</th>
+                <th style={s.th}>{t('admin.reports.profit.table.price')}</th>
+                <th style={s.th}>{t('admin.reports.profit.table.count')}</th>
+                <th style={s.th}>{t('admin.reports.profit.table.revenue')}</th>
               </tr>
             </thead>
             <tbody>
               {profitByProduct.length === 0 && (
-                <tr><td colSpan={4} style={s.empty}>Нет данных</td></tr>
+                <tr><td colSpan={4} style={s.empty}>{t('admin.reports.empty')}</td></tr>
               )}
               {profitByProduct.map(p => (
                 <tr key={p.id} style={s.tr}>
                   <td style={s.td}><strong>{p.name}</strong></td>
-                  <td style={s.td}>{Number(p.price).toLocaleString()} сум</td>
-                  <td style={s.td}>{p.count} шт.</td>
+                  <td style={s.td}>{Number(p.price).toLocaleString()} {t('common.currency')}</td>
+                  <td style={s.td}>{p.count} {t('common.units.pcs')}</td>
                   <td style={s.td}>
                     <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                      {p.revenue.toLocaleString()} сум
+                      {p.revenue.toLocaleString()} {t('common.currency')}
                     </span>
                   </td>
                 </tr>
@@ -201,35 +204,35 @@ export default function Reports() {
           <div style={s.summaryRow}>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #6366f1' }}>
               <div style={s.summaryNum}>{contracts.length}</div>
-              <div style={s.summaryLabel}>Всего договоров</div>
+              <div style={s.summaryLabel}>{t('admin.reports.contracts.totalContracts')}</div>
             </div>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #f59e0b' }}>
               <div style={s.summaryNum}>
-                {contractStats.reduce((s, c) => s + c.itemsCount, 0)}
+                {contractStats.reduce((s_val, c) => s_val + c.itemsCount, 0)}
               </div>
-              <div style={s.summaryLabel}>Позиций заказано</div>
+              <div style={s.summaryLabel}>{t('admin.reports.contracts.itemsOrdered')}</div>
             </div>
             <div style={{ ...s.summaryCard, borderTop: '4px solid #16a34a' }}>
               <div style={s.summaryNum}>
-                {contractStats.reduce((s, c) => s + c.total, 0).toLocaleString()} сум
+                {contractStats.reduce((s_val, c) => s_val + c.total, 0).toLocaleString()} {t('common.currency')}
               </div>
-              <div style={s.summaryLabel}>Общая сумма</div>
+              <div style={s.summaryLabel}>{t('admin.reports.contracts.totalAmount')}</div>
             </div>
           </div>
 
           <table style={s.table}>
             <thead>
               <tr style={s.thead}>
-                <th style={s.th}>Клиент</th>
-                <th style={s.th}>Телефон</th>
-                <th style={s.th}>Дата</th>
-                <th style={s.th}>Позиций</th>
-                <th style={s.th}>Сумма</th>
+                <th style={s.th}>{t('admin.reports.contracts.table.client')}</th>
+                <th style={s.th}>{t('admin.reports.contracts.table.phone')}</th>
+                <th style={s.th}>{t('admin.reports.contracts.table.date')}</th>
+                <th style={s.th}>{t('admin.reports.contracts.table.items')}</th>
+                <th style={s.th}>{t('admin.reports.contracts.table.amount')}</th>
               </tr>
             </thead>
             <tbody>
               {contractStats.length === 0 && (
-                <tr><td colSpan={5} style={s.empty}>Нет данных</td></tr>
+                <tr><td colSpan={5} style={s.empty}>{t('admin.reports.empty')}</td></tr>
               )}
               {contractStats.map(c => (
                 <tr key={c.id} style={s.tr}>
@@ -238,10 +241,10 @@ export default function Reports() {
                   <td style={s.td}>
                     {new Date(c.date).toLocaleDateString('ru-RU')}
                   </td>
-                  <td style={s.td}>{c.itemsCount} шт.</td>
+                  <td style={s.td}>{c.itemsCount} {t('common.units.pcs')}</td>
                   <td style={s.td}>
                     <span style={{ color: '#4f46e5', fontWeight: 600 }}>
-                      {c.total.toLocaleString()} сум
+                      {c.total.toLocaleString()} {t('common.currency')}
                     </span>
                   </td>
                 </tr>

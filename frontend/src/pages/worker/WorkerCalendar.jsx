@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';   // ← Добавлено
 
 const API = 'http://127.0.0.1:8000';
 
 export default function WorkerCalendar() {
+  const { t } = useTranslation();                  // ← Добавлено
+
   const [stages, setStages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -12,10 +15,13 @@ export default function WorkerCalendar() {
 
   useEffect(() => {
     axios.get(`${API}/api/my-stages/`, { headers })
-      .then(res => { setStages(res.data); setLoading(false); });
+      .then(res => {
+        setStages(res.data);
+        setLoading(false);
+      });
   }, []);
 
-  if (loading) return <p style={{ padding: 40 }}>Загрузка...</p>;
+  if (loading) return <p style={{ padding: 40 }}>{t('common.loading')}</p>;
 
   // Группируем по дате производства
   const grouped = {};
@@ -26,19 +32,14 @@ export default function WorkerCalendar() {
     grouped[date].push(stage);
   });
 
-  const STAGE_LABELS = {
-    frame: 'Каркас', springs: 'Пружины', sewing: 'Шитьё',
-    foam: 'Поролон', upholstery: 'Обивка',
-  };
-
   return (
     <div style={s.page}>
-      <h2 style={s.title}>Календарь производства</h2>
+      <h2 style={s.title}>{t('worker.calendar.title')}</h2>
 
       {Object.keys(grouped).length === 0 ? (
         <div style={s.empty}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
-          <div>Нет запланированных задач</div>
+          <div>{t('worker.calendar.noTasks')}</div>
         </div>
       ) : (
         <div style={s.list}>
@@ -51,7 +52,7 @@ export default function WorkerCalendar() {
                   {stageList.map(stage => (
                     <div key={stage.id} style={s.stageItem}>
                       <div style={s.stageName}>
-                        {STAGE_LABELS[stage.stage_type]}
+                        {t(`stages.${stage.stage_type}`)}     {/* ← Перевод этапа */}
                       </div>
                       <div style={s.productName}>{stage.product_name}</div>
                       <span style={{
@@ -61,8 +62,7 @@ export default function WorkerCalendar() {
                         color: stage.status === 'completed' ? '#16a34a' :
                                stage.status === 'in_progress' ? '#1d4ed8' : '#854d0e',
                       }}>
-                        {stage.status === 'completed' ? 'Завершено' :
-                         stage.status === 'in_progress' ? 'В работе' : 'Ожидает'}
+                        {t(`status.${stage.status}`)}         {/* ← Перевод статуса */}
                       </span>
                     </div>
                   ))}

@@ -1,30 +1,19 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';   // ← Добавлено
 
 const API = 'http://127.0.0.1:8000';
 
-const STAGE_LABELS = {
-  frame:      'Каркас',
-  springs:    'Пружины / Механизмы',
-  sewing:     'Шитьё',
-  foam:       'Поролон',
-  upholstery: 'Обивка',
-};
-
-const STATUS_CONFIG = {
-  pending:     { label: 'Ожидает',   color: '#f59e0b' },
-  in_progress: { label: 'В работе',  color: '#3b82f6' },
-  completed:   { label: 'Завершено', color: '#16a34a' },
-};
-
 export default function WorkerDashboard() {
   const { user, logout } = useAuth();
-  const [stages, setStages]           = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [refreshKey, setRefreshKey]   = useState(0);
-  const [writeoffForm, setWriteoffForm] = useState(null); // stage для списания
-  const [quantities, setQuantities]   = useState({});    // materialId -> qty
+  const { t } = useTranslation();                  // ← Добавлено
+
+  const [stages, setStages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [writeoffForm, setWriteoffForm] = useState(null);
+  const [quantities, setQuantities] = useState({});
   const [actionLoading, setActionLoading] = useState(null);
 
   const token = localStorage.getItem('token');
@@ -46,23 +35,23 @@ export default function WorkerDashboard() {
       await axios.post(`${API}/api/stages/${stageId}/start/`, {}, { headers });
       refresh();
     } catch (err) {
-      alert(err.response?.data?.error || 'Ошибка');
+      alert(err.response?.data?.error || t('common.error'));
     } finally {
       setActionLoading(null);
     }
   };
 
-  // Открыть форму списания перед завершением
+  // Открыть форму списания
   const openWriteoff = (stage) => {
     const initQty = {};
     stage.available_materials.forEach(m => {
-      initQty[m.id] = m.needed; // по умолчанию — нужное количество
+      initQty[m.id] = m.needed;
     });
     setQuantities(initQty);
     setWriteoffForm(stage);
   };
 
-  // Завершить этап + списать материалы
+  // Завершить этап
   const handleComplete = async () => {
     if (!writeoffForm) return;
     setActionLoading(writeoffForm.id);
@@ -71,7 +60,7 @@ export default function WorkerDashboard() {
       .filter(m => parseFloat(quantities[m.id] || 0) > 0)
       .map(m => ({
         material_id: m.id,
-        quantity:    parseFloat(quantities[m.id] || 0),
+        quantity: parseFloat(quantities[m.id] || 0),
       }));
 
     try {
@@ -84,42 +73,46 @@ export default function WorkerDashboard() {
       setQuantities({});
       refresh();
     } catch (err) {
-      alert(err.response?.data?.error || 'Ошибка при завершении');
+      alert(err.response?.data?.error || t('common.error'));
     } finally {
       setActionLoading(null);
     }
   };
 
-  const pending     = stages.filter(s => s.status === 'pending');
+  const pending = stages.filter(s => s.status === 'pending');
   const in_progress = stages.filter(s => s.status === 'in_progress');
-  const completed   = stages.filter(s => s.status === 'completed');
+  const completed = stages.filter(s => s.status === 'completed');
 
-  if (loading) return <p style={{ padding: 40 }}>Загрузка...</p>;
+  if (loading) return <p style={{ padding: 40 }}>{t('common.loading')}</p>;
 
   return (
     <div style={s.page}>
       {/* Шапка */}
       <div style={s.topbar}>
         <div>
-          <div style={s.greeting}>Добро пожаловать, {user?.username}!</div>
-          <div style={s.subtitle}>Ваши задачи на производстве</div>
+          <div style={s.greeting}>
+            {t('worker.dashboard.greeting', { name: user?.username })}
+          </div>
+          <div style={s.subtitle}>{t('worker.dashboard.subtitle')}</div>
         </div>
-        <button style={s.logoutBtn} onClick={logout}>Выйти</button>
+        <button style={s.logoutBtn} onClick={logout}>
+          {t('worker.dashboard.buttons.logout')}
+        </button>
       </div>
 
       {/* Статистика */}
       <div style={s.stats}>
         <div style={{ ...s.statCard, borderTop: '4px solid #f59e0b' }}>
           <div style={s.statNum}>{pending.length}</div>
-          <div style={s.statLabel}>Ожидают</div>
+          <div style={s.statLabel}>{t('worker.dashboard.stats.pending')}</div>
         </div>
         <div style={{ ...s.statCard, borderTop: '4px solid #3b82f6' }}>
           <div style={s.statNum}>{in_progress.length}</div>
-          <div style={s.statLabel}>В работе</div>
+          <div style={s.statLabel}>{t('worker.dashboard.stats.inProgress')}</div>
         </div>
         <div style={{ ...s.statCard, borderTop: '4px solid #16a34a' }}>
           <div style={s.statNum}>{completed.length}</div>
-          <div style={s.statLabel}>Завершено</div>
+          <div style={s.statLabel}>{t('worker.dashboard.stats.completed')}</div>
         </div>
       </div>
 
@@ -128,15 +121,17 @@ export default function WorkerDashboard() {
         <div style={s.overlay}>
           <div style={s.modal}>
             <h3 style={{ margin: '0 0 8px' }}>
-              Завершение: {STAGE_LABELS[writeoffForm.stage_type]}
+              {t('worker.dashboard.modal.title', {
+                stage: t(`stages.${writeoffForm.stage_type}`)
+              })}
             </h3>
             <p style={{ color: '#888', marginBottom: 16, fontSize: 14 }}>
-              Укажите количество списываемых материалов
+              {t('worker.dashboard.modal.description')}
             </p>
 
             {writeoffForm.available_materials.length === 0 ? (
               <p style={{ color: '#aaa', marginBottom: 16 }}>
-                Нет материалов для списания
+                {t('worker.dashboard.modal.noMaterials')}
               </p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
@@ -145,17 +140,17 @@ export default function WorkerDashboard() {
                     <div style={sw.matInfo}>
                       <div style={sw.matName}>{m.name}</div>
                       <div style={sw.matStock}>
-                        На складе: {m.quantity} {m.unit} | Норма: {m.needed}
+                        {t('worker.dashboard.modal.stock')} {m.quantity} {m.unit} | {t('worker.dashboard.modal.norm')} {m.needed}
                       </div>
                     </div>
                     <input
                       style={sw.input}
-                      type="number" step="0.01" min="0"
+                      type="number"
+                      step="0.01"
+                      min="0"
                       max={m.quantity}
                       value={quantities[m.id] || ''}
-                      onChange={e => setQuantities({
-                        ...quantities, [m.id]: e.target.value
-                      })}
+                      onChange={e => setQuantities({ ...quantities, [m.id]: e.target.value })}
                     />
                     <span style={sw.unit}>{m.unit}</span>
                   </div>
@@ -164,12 +159,17 @@ export default function WorkerDashboard() {
             )}
 
             <div style={{ display: 'flex', gap: 12 }}>
-              <button style={s.completeBtn} onClick={handleComplete}
-                disabled={actionLoading === writeoffForm.id}>
-                {actionLoading === writeoffForm.id ? 'Завершение...' : '✅ Завершить этап'}
+              <button
+                style={s.completeBtn}
+                onClick={handleComplete}
+                disabled={actionLoading === writeoffForm.id}
+              >
+                {actionLoading === writeoffForm.id
+                  ? t('worker.dashboard.buttons.completing')
+                  : t('worker.dashboard.buttons.complete')}
               </button>
               <button style={s.cancelBtn} onClick={() => setWriteoffForm(null)}>
-                Отмена
+                {t('worker.dashboard.buttons.cancel')}
               </button>
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function WorkerDashboard() {
       {/* Этапы в работе */}
       {in_progress.length > 0 && (
         <div style={s.section}>
-          <h3 style={s.sectionTitle}>🔨 Сейчас в работе</h3>
+          <h3 style={s.sectionTitle}>{t('worker.dashboard.section.inProgress')}</h3>
           <div style={s.cards}>
             {in_progress.map(stage => (
               <div key={stage.id} style={c.card}>
@@ -187,20 +187,19 @@ export default function WorkerDashboard() {
                   <span style={c.productName}>{stage.product_name}</span>
                   <span style={{
                     ...c.badge,
-                    background: STATUS_CONFIG[stage.status].color + '20',
-                    color:      STATUS_CONFIG[stage.status].color,
+                    background: '#dbeafe',
+                    color: '#1d4ed8',
                   }}>
-                    {STATUS_CONFIG[stage.status].label}
+                    {t(`status.${stage.status}`)}
                   </span>
                 </div>
-                <div style={c.stageName}>{STAGE_LABELS[stage.stage_type]}</div>
+                <div style={c.stageName}>{t(`stages.${stage.stage_type}`)}</div>
                 <div style={c.date}>
                   📅 {new Date(stage.production_date).toLocaleDateString('ru-RU')}
                 </div>
-                <div style={c.order}>Этап #{stage.order + 1}</div>
-                <button style={c.completeBtn}
-                  onClick={() => openWriteoff(stage)}>
-                  ✅ Завершить этап
+                <div style={c.order}>Этап #{stage.order}</div>
+                <button style={c.completeBtn} onClick={() => openWriteoff(stage)}>
+                  {t('worker.dashboard.buttons.complete')}
                 </button>
               </div>
             ))}
@@ -211,7 +210,7 @@ export default function WorkerDashboard() {
       {/* Ожидающие */}
       {pending.length > 0 && (
         <div style={s.section}>
-          <h3 style={s.sectionTitle}>⏳ Ожидают начала</h3>
+          <h3 style={s.sectionTitle}>{t('worker.dashboard.section.pending')}</h3>
           <div style={s.cards}>
             {pending.map(stage => (
               <div key={stage.id} style={c.card}>
@@ -219,13 +218,13 @@ export default function WorkerDashboard() {
                   <span style={c.productName}>{stage.product_name}</span>
                   <span style={{
                     ...c.badge,
-                    background: STATUS_CONFIG[stage.status].color + '20',
-                    color:      STATUS_CONFIG[stage.status].color,
+                    background: '#fef9c3',
+                    color: '#854d0e',
                   }}>
-                    {STATUS_CONFIG[stage.status].label}
+                    {t(`status.${stage.status}`)}
                   </span>
                 </div>
-                <div style={c.stageName}>{STAGE_LABELS[stage.stage_type]}</div>
+                <div style={c.stageName}>{t(`stages.${stage.stage_type}`)}</div>
                 <div style={c.date}>
                   📅 {new Date(stage.production_date).toLocaleDateString('ru-RU')}
                 </div>
@@ -233,8 +232,11 @@ export default function WorkerDashboard() {
                 <button
                   style={c.startBtn}
                   onClick={() => handleStart(stage.id)}
-                  disabled={actionLoading === stage.id}>
-                  {actionLoading === stage.id ? 'Запуск...' : '▶ Начать этап'}
+                  disabled={actionLoading === stage.id}
+                >
+                  {actionLoading === stage.id
+                    ? t('worker.dashboard.buttons.starting')
+                    : t('worker.dashboard.buttons.start')}
                 </button>
               </div>
             ))}
@@ -245,7 +247,7 @@ export default function WorkerDashboard() {
       {/* Завершённые */}
       {completed.length > 0 && (
         <div style={s.section}>
-          <h3 style={s.sectionTitle}>✅ Завершённые</h3>
+          <h3 style={s.sectionTitle}>{t('worker.dashboard.section.completed')}</h3>
           <div style={s.cards}>
             {completed.map(stage => (
               <div key={stage.id} style={{ ...c.card, opacity: 0.7 }}>
@@ -256,10 +258,10 @@ export default function WorkerDashboard() {
                     background: '#dcfce7',
                     color: '#16a34a',
                   }}>
-                    Завершено
+                    {t(`status.${stage.status}`)}
                   </span>
                 </div>
-                <div style={c.stageName}>{STAGE_LABELS[stage.stage_type]}</div>
+                <div style={c.stageName}>{t(`stages.${stage.stage_type}`)}</div>
                 <div style={c.date}>
                   ✅ {stage.completed_at
                     ? new Date(stage.completed_at).toLocaleDateString('ru-RU')
@@ -274,7 +276,7 @@ export default function WorkerDashboard() {
       {stages.length === 0 && (
         <div style={s.empty}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-          <div>Нет назначенных задач</div>
+          <div>{t('worker.dashboard.empty.noTasks')}</div>
         </div>
       )}
     </div>

@@ -10,8 +10,10 @@ from rest_framework.decorators import action
 from rest_framework import status
 from django.db import models as django_models
 from django.db.models import F
-from inventory.models import Material, MaterialTransaction, Product, ProductMaterial, PurchaseRequest
+from django.db.models import ProtectedError
+from inventory.models import Material, MaterialTransaction, Product, ProductMaterial, PurchaseRequest, ProductStageTemplate
 from contracts.models import Contract, ContractProduct
+from .serializers import ProductStageTemplateSerializer
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer,
     MaterialSerializer,              MaterialTransactionSerializer,
@@ -19,6 +21,7 @@ from .serializers import (
     ProductionSerializer,            ProductionStageSerializer,
     WorkerStageSerializer,           PersonSerializer,
     ContractSerializer,              ContractProductSerializer,
+
 )
 
 
@@ -56,10 +59,20 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all().order_by('name')
     serializer_class = ProductSerializer
 
-    def get_permissians(self):
+    def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsAdmin()]
         return [permissions.IsAuthenticated()]
+
+    # НОВЫЙ МЕТОД: Аккуратная обработка удаления
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {'error': 'Невозможно удалить это изделие, так как оно уже используется в существующих договорах или производствах.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class ProductMaterialViewSet(viewsets.ModelViewSet):
     queryset = ProductMaterial.objects.all()
@@ -81,52 +94,86 @@ class ProductionViewSet(viewsets.ModelViewSet):
             return [IsAdmin()]
         return [permissions.IsAuthenticated()]
 
+    # --- НОВЫЙ МЕТОД: АВТОГЕНЕРАЦИЯ ЭТАПОВ ПРИ РУЧНОМ СОЗДАНИИ ---
+    def perform_create(self, serializer):
+        with transaction.atomic():
+            # Сохраняем производство, сразу ставим статус 'started'
+            production = serializer.save(status='started', current_stage_order=0)
+
+            # Берем технологическую карту (шаблоны этапов) из изделия
+            templates = production.product.stage_templates.all()
+
+            if templates.exists():
+                for template in templates:
+                    ProductionStage.objects.create(
+                        production=production,
+                        stage_type=template.stage_type,
+                        assigned_worker=None,  # Ждет назначения от админа
+                        order=template.order,
+                        status='pending'
+                    )
+            else:
+                # Резервная логика: если техкарта пустая, создаем базовый этап
+                ProductionStage.objects.create(
+                    production=production,
+                    stage_type='frame',
+                    assigned_worker=None,
+                    order=0,
+                    status='pending'
+                )
+
     @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
     def complete(self, request, pk=None):
         production = self.get_object()
 
         with transaction.atomic():
-            product_materials = production.product.materials.all()
-
-            errors = []
-            for pm in product_materials:
-                material = pm.material
-                if material.quantity < pm.quantity:
-                    errors.append(
-                        f"{material.name}: нужно {pm.quantity} {material.unit}, "
-                        f"на складе {material.quantity}"
-                    )
-
-            if errors:
-                return Response(
-                    {'error': 'Недостаточно материалов', 'details': errors},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            for pm in product_materials:
-                material = pm.material
-                material.quantity -= pm.quantity
-                material.save()
-
-                MaterialTransaction.objects.create(
-                    material=material,
-                    quantity=pm.quantity,
-                    transaction_type='out',
-                    comment=f'Списание для производства #{production.id} — {production.product.name}',
-                )
-
-                if material.quantity <= material.min_quantity:
-                    PurchaseRequest.objects.get_or_create(
-                        material=material,
-                        status='pending',
-                        defaults={'requested_quantity': material.min_quantity * 2}
-                    )
+            # Закрываем все незавершенные этапы
+            incomplete_stages = production.stages.exclude(status='completed')
+            if incomplete_stages.exists():
+                incomplete_stages.update(status='completed', completed_at=timezone.now())
 
             production.status = 'completed'
             production.save()
 
-        return Response({'success': True, 'message': 'Производство завершено, материалы списаны'})
+            # --- СИНХРОНИЗАЦИЯ С ДОГОВОРОМ ---
+            if production.contract:
+                try:
+                    contract_item = ContractProduct.objects.get(
+                        contract=production.contract,
+                        product=production.product
+                    )
 
+                    # Считаем, сколько таких изделий уже полностью готово
+                    completed_count = Production.objects.filter(
+                        contract=production.contract,
+                        product=production.product,
+                        status='completed'
+                    ).count()
+
+                    # Если готово столько же, сколько заказано (или больше)
+                    if completed_count >= contract_item.quantity:
+                        contract_item.status = 'completed'
+                        contract_item.save()
+
+                except ContractProduct.DoesNotExist:
+                    pass
+
+        return Response({
+            'success': True,
+            'message': 'Производство успешно закрыто. Статусы договора обновлены.'
+        })
+
+    def destroy(self, request, *args, **kwargs):
+        production = self.get_object()
+
+        # Если статус НЕ завершен
+        if production.status != 'completed':
+            return Response(
+                {'error': 'Нельзя удалить производство, которое еще не завершено!'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().destroy(request, *args, **kwargs)
 
 class ProductionStageViewSet(viewsets.ModelViewSet):
     queryset = ProductionStage.objects.all()
@@ -149,11 +196,69 @@ class ContractViewSet(viewsets.ModelViewSet):
     serializer_class = ContractSerializer
     permission_classes = [IsAdmin]
 
+
 class ContractProductViewSet(viewsets.ModelViewSet):
     queryset = ContractProduct.objects.all()
     serializer_class = ContractProductSerializer
     permission_classes = [IsAdmin]
 
+    @action(detail=True, methods=['post'])
+    def start_production(self, request, pk=None):
+        contract_item = self.get_object()
+
+        # Теперь блокируем только если заказ ПОЛНОСТЬЮ завершен
+        if contract_item.status == 'completed':
+            return Response({'error': 'Эта позиция уже завершена.'}, status=400)
+
+        with transaction.atomic():
+            # Считаем, сколько производств УЖЕ запущено по этому заказу
+            already_started = Production.objects.filter(
+                contract=contract_item.contract,
+                product=contract_item.product
+            ).count()
+
+            # Жесткий контроль количества (защита от лишних кликов)
+            if already_started >= contract_item.quantity:
+                # Если статус забыл обновиться, поправляем
+                if contract_item.status == 'pending':
+                    contract_item.status = 'in_progress'
+                    contract_item.save()
+                return Response({'error': 'Все изделия по этой позиции уже запущены.'}, status=400)
+
+            # Создаем ОДНО производство
+            production = Production.objects.create(
+                product=contract_item.product,
+                contract=contract_item.contract,
+                status='started',
+                current_stage_order=0
+            )
+
+            # Генерируем этапы
+            templates = contract_item.product.stage_templates.all()
+            if templates.exists():
+                for template in templates:
+                    ProductionStage.objects.create(
+                        production=production,
+                        stage_type=template.stage_type,
+                        assigned_worker=None,
+                        order=template.order,
+                        status='pending'
+                    )
+            else:
+                ProductionStage.objects.create(
+                    production=production,
+                    stage_type='frame',
+                    assigned_worker=None,
+                    order=0,
+                    status='pending'
+                )
+
+            # Обновляем статус заказа в договоре, чтобы было понятно, что работа пошла
+            if contract_item.status == 'pending':
+                contract_item.status = 'in_progress'
+                contract_item.save()
+
+        return Response({'success': True, 'message': 'Одно изделие успешно запущено.'})
 
 class MyStagesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -229,7 +334,7 @@ class DashboardStatsView(APIView):
         ).count()
         total_products      = Product.objects.count()
         total_productions   = Production.objects.count()
-        active_productions  = Production.objects.count()
+        active_productions  = Production.objects.filter(status__in=['pending', 'started']).count()
         total_contracts     = Contract.objects.count()
         total_persons       = Person.objects.count()
         pending_requests    = PurchaseRequest.objects.filter(status='pending').count()
@@ -261,7 +366,8 @@ class DashboardStatsView(APIView):
             'recent_productions':  recent_data,
             'low_stock':           list(low_stock),
         })
-    #начать и завершить этап
+
+# начать и завершить этап
 class StageActionView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -316,95 +422,90 @@ class StageActionView(APIView):
 
             return Response({'success': True, 'message': 'Этап начат'})
 
-
         elif action == 'complete':
 
             if stage.status != 'in_progress':
                 return Response({'error': 'Этап ещё не начат'}, status=400)
 
             # Списываем материалы для этого этапа
-
             materials_to_writeoff = request.data.get('materials', [])
 
             with transaction.atomic():
-
                 for item in materials_to_writeoff:
-
                     try:
-
                         material = Material.objects.get(pk=item['material_id'])
-
-                        # Исправлено: приводим к Decimal
-
-                        qty = Decimal(str(item['quantity']))  # ← безопасное преобразование
+                        qty = Decimal(str(item['quantity']))
 
                         if material.quantity < qty:
                             return Response(
-
                                 {'error': f'Недостаточно {material.name}: '
-
                                           f'нужно {qty}, на складе {material.quantity}'},
-
                                 status=400
-
                             )
 
                         material.quantity -= qty
-
                         material.save()
 
                         MaterialTransaction.objects.create(
-
                             material=material,
-
                             quantity=qty,
-
                             transaction_type='out',
-
                             comment=f'Списание: этап "{stage.get_stage_type_display()}" '
-
                                     f'производства #{stage.production.id}',
-
                         )
 
+                        # Если остаток упал ниже минимума, создаем заявку на закупку
+                        if material.quantity <= material.min_quantity:
+                            PurchaseRequest.objects.get_or_create(
+                                material=material,
+                                status='pending',
+                                defaults={'requested_quantity': material.min_quantity * 2}
+                            )
+
                     except Material.DoesNotExist:
-
                         return Response({'error': f'Материал с id {item["material_id"]} не найден'}, status=400)
-
                     except (KeyError, TypeError, InvalidOperation):
-
                         return Response({'error': 'Неверный формат данных материалов'}, status=400)
 
                 stage.status = 'completed'
-
                 stage.completed_at = now
-
                 stage.save()
 
                 # Проверяем — все ли этапы завершены
-
                 production = stage.production
-
                 all_stages = ProductionStage.objects.filter(production=production)
-
                 all_completed = all(s.status == 'completed' for s in all_stages)
 
                 if all_completed:
-
                     production.status = 'completed'
+                    production.save()  # Сохраняем сразу, чтобы посчитать в выборке ниже
+
+                    # --- СИНХРОНИЗАЦИЯ С ДОГОВОРОМ ---
+                    if production.contract:
+                        try:
+                            contract_item = ContractProduct.objects.get(
+                                contract=production.contract,
+                                product=production.product
+                            )
+                            completed_count = Production.objects.filter(
+                                contract=production.contract,
+                                product=production.product,
+                                status='completed'
+                            ).count()
+
+                            if completed_count >= contract_item.quantity:
+                                contract_item.status = 'completed'
+                                contract_item.save()
+
+                        except ContractProduct.DoesNotExist:
+                            pass
 
                 else:
-
                     # Переходим к следующему этапу
-
                     next_stage = ProductionStage.objects.filter(
-
                         production=production,
-
                         order__gt=stage.order,
-
                         status='pending'
-
                     ).order_by('order').first()
 
                     if next_stage:
@@ -415,3 +516,8 @@ class StageActionView(APIView):
             return Response({'success': True, 'message': 'Этап завершён'})
 
         return Response({'error': 'Неизвестное действие'}, status=400)
+
+class ProductStageTemplateViewSet(viewsets.ModelViewSet):
+    queryset = ProductStageTemplate.objects.all().order_by('order')
+    serializer_class = ProductStageTemplateSerializer
+    permission_classes = [IsAdmin]

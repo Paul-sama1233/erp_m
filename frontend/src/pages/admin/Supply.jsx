@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next'; // ← Добавлен импорт
 
 const API = 'http://127.0.0.1:8000';
 
 export default function Supply() {
+  const { t } = useTranslation(); // ← Инициализация хука
+
   const [transactions, setTransactions] = useState([]);
   const [materials, setMaterials]       = useState([]);
   const [showForm, setShowForm]         = useState(false);
@@ -19,12 +22,12 @@ export default function Supply() {
   const refresh = () => setRefreshKey(k => k + 1);
 
   const fetchAll = async () => {
-    const [t, m] = await Promise.all([
+    const [t_res, m] = await Promise.all([
       axios.get(`${API}/api/transactions/`, { headers }),
       axios.get(`${API}/api/materials/`, { headers }),
     ]);
     // Показываем только поставки (тип 'in')
-    setTransactions(t.data.filter(t => t.transaction_type === 'in'));
+    setTransactions(t_res.data.filter(tx => tx.transaction_type === 'in'));
     setMaterials(m.data);
     setLoading(false);
   };
@@ -53,52 +56,52 @@ export default function Supply() {
     refresh();
   };
 
-  if (loading) return <p style={{ padding: 40 }}>Загрузка...</p>;
+  if (loading) return <p style={{ padding: 40 }}>{t('common.loading')}</p>;
 
   return (
     <div style={s.page}>
       <div style={s.header}>
-        <h2 style={s.title}>Поставки материалов</h2>
+        <h2 style={s.title}>{t('admin.supply.title')}</h2>
         <button style={s.btn} onClick={() => setShowForm(!showForm)}>
-          + Новая поставка
+          {t('admin.supply.buttons.new')}
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} style={s.form}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Принять поставку</h3>
+          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>{t('admin.supply.form.title')}</h3>
           <div style={s.formGrid}>
             <div style={s.fieldGroup}>
-              <label style={s.label}>Материал</label>
+              <label style={s.label}>{t('admin.supply.form.material')}</label>
               <select style={s.select} required
                 value={form.material}
                 onChange={e => setForm({ ...form, material: e.target.value })}>
-                <option value="">— Выберите материал —</option>
+                <option value="">{t('admin.supply.form.selectMaterial')}</option>
                 {materials.map(m => (
                   <option key={m.id} value={m.id}>
-                    {m.name} (остаток: {m.quantity} {m.unit})
+                    {m.name} {t('admin.supply.form.stock', { quantity: m.quantity, unit: m.unit })}
                   </option>
                 ))}
               </select>
             </div>
             <div style={s.fieldGroup}>
-              <label style={s.label}>Количество</label>
+              <label style={s.label}>{t('admin.supply.form.quantity')}</label>
               <input style={s.input} type="number" step="0.01" min="0.01" required
-                placeholder="Введите количество"
+                placeholder={t('admin.supply.form.quantityPlaceholder')}
                 value={form.quantity}
                 onChange={e => setForm({ ...form, quantity: e.target.value })} />
             </div>
             <div style={s.fieldGroup}>
-              <label style={s.label}>Комментарий (поставщик, накладная)</label>
-              <input style={s.input} placeholder="Поставщик Ахмадов, накладная №123"
+              <label style={s.label}>{t('admin.supply.form.comment')}</label>
+              <input style={s.input} placeholder={t('admin.supply.form.commentPlaceholder')}
                 value={form.comment}
                 onChange={e => setForm({ ...form, comment: e.target.value })} />
             </div>
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
-            <button style={s.btn} type="submit">Принять поставку</button>
+            <button style={s.btn} type="submit">{t('admin.supply.buttons.submit')}</button>
             <button style={s.cancelBtn} type="button"
-              onClick={() => setShowForm(false)}>Отмена</button>
+              onClick={() => setShowForm(false)}>{t('common.cancel')}</button>
           </div>
         </form>
       )}
@@ -107,30 +110,30 @@ export default function Supply() {
       <table style={s.table}>
         <thead>
           <tr style={s.thead}>
-            <th style={s.th}>Дата</th>
-            <th style={s.th}>Материал</th>
-            <th style={s.th}>Количество</th>
-            <th style={s.th}>Комментарий</th>
+            <th style={s.th}>{t('admin.supply.table.date')}</th>
+            <th style={s.th}>{t('admin.supply.table.material')}</th>
+            <th style={s.th}>{t('admin.supply.table.quantity')}</th>
+            <th style={s.th}>{t('admin.supply.table.comment')}</th>
           </tr>
         </thead>
         <tbody>
           {transactions.length === 0 && (
             <tr>
               <td colSpan={4} style={{ textAlign: 'center', padding: 24, color: '#aaa' }}>
-                Поставок пока нет
+                {t('admin.supply.empty')}
               </td>
             </tr>
           )}
-          {transactions.map(t => (
-            <tr key={t.id} style={s.tr}>
+          {transactions.map(tx => (
+            <tr key={tx.id} style={s.tr}>
               <td style={s.td}>
-                {new Date(t.created_at).toLocaleDateString('ru-RU')}
+                {new Date(tx.created_at).toLocaleDateString('ru-RU')}
               </td>
-              <td style={s.td}>{t.material_name}</td>
+              <td style={s.td}>{tx.material_name}</td>
               <td style={s.td}>
-                <span style={s.qtyBadge}>+{t.quantity}</span>
+                <span style={s.qtyBadge}>+{tx.quantity}</span>
               </td>
-              <td style={s.td}>{t.comment || '—'}</td>
+              <td style={s.td}>{tx.comment || '—'}</td>
             </tr>
           ))}
         </tbody>

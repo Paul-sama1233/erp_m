@@ -137,26 +137,31 @@ class Production(models.Model):
     def __str__(self):
         return f"{self.product.name} / {self.created_at.strftime('%d.%m.%Y')}"
 
+
 class ProductionStage(models.Model):
     STAGE_CHOICES = [
-        ('frame',      'Каркас'),
-        ('springs',    'Пружины / Механизмы'),
-        ('sewing',     'Шитьё'),
-        ('foam',       'Поролон'),
+        ('frame', 'Каркас'),
+        ('springs', 'Пружины / Механизмы'),
+        ('sewing', 'Шитьё'),
+        ('foam', 'Поролон'),
         ('upholstery', 'Обивка'),
     ]
     STATUS_CHOICES = [
-        ('pending',     'Ожидает'),
+        ('pending', 'Ожидает'),
         ('in_progress', 'В работе'),
-        ('completed',   'Завершено'),
+        ('completed', 'Завершено'),
     ]
     production = models.ForeignKey(
         Production, on_delete=models.CASCADE, related_name='stages'
     )
     stage_type = models.CharField(max_length=20, choices=STAGE_CHOICES)
+
+    # ИЗМЕНЕНИЕ ЗДЕСЬ: Разрешаем этапу быть без назначенного работника при старте
     assigned_worker = models.ForeignKey(
-        Person, on_delete=models.PROTECT, verbose_name="Назначенный работник"
+        Person, on_delete=models.PROTECT, verbose_name="Назначенный работник",
+        null=True, blank=True
     )
+
     order = models.PositiveIntegerField(default=0, verbose_name="Порядок выполнения")
     status = models.CharField(
         max_length=15, choices=STATUS_CHOICES, default='pending'

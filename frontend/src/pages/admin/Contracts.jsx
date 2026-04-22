@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 
 const API = 'http://127.0.0.1:8000';
 const emptyForm = { client_name: '', phone: '', address: '' };
 
 export default function Contracts() {
+  const { t, i18n } = useTranslation();
+
   const [contracts, setContracts] = useState([]);
   const [products, setProducts]   = useState([]);
   const [showForm, setShowForm]   = useState(false);
@@ -19,15 +22,19 @@ export default function Contracts() {
   });
   const [showItemForm, setShowItemForm] = useState(null);
 
-  // Новое состояние для проверки адреса
   const [addressCheck, setAddressCheck] = useState({
     loading: false,
-    result: null,      // {valid, message, formatted_address, coordinates}
+    result: null,
     error: null
   });
+
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
   const refresh = () => setRefreshKey(k => k + 1);
+
+  // Принудительное обновление при смене языка
+  useEffect(() => {
+  }, [i18n.language]);
 
   const fetchAll = async () => {
     const [c, p] = await Promise.all([
@@ -44,7 +51,11 @@ export default function Contracts() {
   const checkAddress = async () => {
     const address = form.address.trim();
     if (!address) {
-      setAddressCheck({ loading: false, result: null, error: "Введите адрес" });
+      setAddressCheck({
+        loading: false,
+        result: null,
+        error: t('admin.contracts.address.errorEmpty')
+      });
       return;
     }
 
@@ -65,7 +76,7 @@ export default function Contracts() {
       setAddressCheck({
         loading: false,
         result: null,
-        error: err.response?.data?.message || "Ошибка проверки адреса"
+        error: err.response?.data?.message || t('admin.contracts.address.errorCheck')
       });
     }
   };
@@ -83,20 +94,19 @@ export default function Contracts() {
     refresh();
   };
 
-  const handleStartProduction = async (item, contractId) => {
-    await axios.patch(`${API}/api/contract-products/${item.id}/`,
-      { status: 'in_progress' }, { headers }
-    );
-    await axios.post(`${API}/api/productions/`, {
-      product: item.product,
-      contract: contractId,
-    }, { headers });
-    refresh();
-    alert(`✅ Производство для "${item.product_name}" запущено!`);
+  // --- ИЗМЕНЕНО: Теперь вызывает умный эндпоинт на бекенде ---
+  const handleStartProduction = async (item) => {
+    try {
+      await axios.post(`${API}/api/contract-products/${item.id}/start_production/`, {}, { headers });
+      refresh();
+      alert(t('admin.contracts.alert.productionStarted', { product: item.product_name }));
+    } catch (err) {
+      alert(err.response?.data?.error || t('common.error'));
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Удалить договор?')) return;
+    if (!confirm(t('admin.contracts.confirm.deleteContract'))) return;
     await axios.delete(`${API}/api/contracts/${id}/`, { headers });
     refresh();
   };
@@ -116,7 +126,7 @@ export default function Contracts() {
   };
 
   const handleRemoveItem = async (itemId) => {
-    if (!confirm('Удалить позицию?')) return;
+    if (!confirm(t('admin.contracts.confirm.deleteItem'))) return;
     await axios.delete(`${API}/api/contract-products/${itemId}/`, { headers });
     refresh();
   };
@@ -127,60 +137,67 @@ export default function Contracts() {
     setShowForm(true);
   };
 
-  // Новые функции для скачивания документов
- const downloadContract = (contractId) => {
+  const downloadContract = (contractId) => {
     window.open(`${API}/api/contracts/${contractId}/generate/pdf/`, '_blank');
   };
 
-  if (loading) return <p style={{ padding: 40 }}>Загрузка...</p>;
+  if (loading) return <p style={{ padding: 40 }}>{t('common.loading')}</p>;
 
   return (
     <div style={s.page}>
       <div style={s.header}>
-        <h2 style={s.title}>Договоры</h2>
+        <h2 style={s.title}>{t('admin.contracts.title')}</h2>
         <button style={s.btn} onClick={() => {
           setShowForm(!showForm);
           setEditingId(null);
           setForm(emptyForm);
         }}>
-          + Новый договор
+          {t('admin.contracts.buttons.newContract')}
         </button>
       </div>
 
-{showForm && (
+      {showForm && (
         <form onSubmit={handleSubmit} style={s.form}>
           <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>
-            {editingId ? 'Редактировать договор' : 'Новый договор'}
+            {editingId ? t('admin.contracts.form.editTitle') : t('admin.contracts.form.newTitle')}
           </h3>
           <div style={s.formGrid}>
             <div style={s.fieldGroup}>
-              <label style={s.label}>ФИО клиента</label>
-              <input style={s.input} required placeholder="Иванов Иван Иванович"
+              <label style={s.label}>{t('admin.contracts.form.clientName')}</label>
+              <input
+                style={s.input}
+                required
                 value={form.client_name}
-                onChange={e => setForm({ ...form, client_name: e.target.value })} />
+                onChange={e => setForm({ ...form, client_name: e.target.value })}
+              />
             </div>
             <div style={s.fieldGroup}>
-              <label style={s.label}>Телефон</label>
-              <input style={s.input} placeholder="+998 90 123 45 67"
+              <label style={s.label}>{t('admin.contracts.form.phone')}</label>
+              <input
+                style={s.input}
                 value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })} />
+                onChange={e => setForm({ ...form, phone: e.target.value })}
+              />
             </div>
             <div style={s.fieldGroup}>
-              <label style={s.label}>Адрес</label>
+              <label style={s.label}>{t('admin.contracts.form.address')}</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input style={s.input} placeholder="г. Ташкент, ул. Навои, 1"
+                <input
+                  style={s.input}
                   value={form.address}
-                  onChange={e => setForm({ ...form, address: e.target.value })} />
+                  onChange={e => setForm({ ...form, address: e.target.value })}
+                />
                 <button
                   type="button"
                   style={s.checkBtn}
                   onClick={checkAddress}
                   disabled={addressCheck.loading || !form.address.trim()}>
-                  {addressCheck.loading ? 'Проверка...' : 'Проверить'}
+                  {addressCheck.loading
+                    ? t('admin.contracts.address.checking')
+                    : t('admin.contracts.address.check')}
                 </button>
               </div>
 
-              {/* Результат проверки адреса */}
               {addressCheck.result && (
                 <div style={{
                   marginTop: 8,
@@ -209,22 +226,26 @@ export default function Contracts() {
 
           <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
             <button style={s.btn} type="submit">
-              {editingId ? 'Сохранить' : 'Создать договор'}
+              {editingId ? t('common.save') : t('common.create')}
             </button>
-            <button style={s.cancelBtn} type="button"
+            <button
+              style={s.cancelBtn}
+              type="button"
               onClick={() => {
                 setShowForm(false);
                 setEditingId(null);
                 setAddressCheck({ loading: false, result: null, error: null });
-              }}>
-              Отмена
+              }}
+            >
+              {t('common.cancel')}
             </button>
           </div>
         </form>
       )}
+
       <div style={s.list}>
         {contracts.length === 0 && (
-          <div style={s.empty}>Договоров пока нет</div>
+          <div style={s.empty}>{t('admin.contracts.empty')}</div>
         )}
 
         {contracts.map(c => (
@@ -242,24 +263,25 @@ export default function Contracts() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button style={s.expandBtn}
                   onClick={() => setExpanded(expanded === c.id ? null : c.id)}>
-                  {expanded === c.id ? '▲ Скрыть' : '▼ Позиции'} ({c.items.length})
+                  {expanded === c.id
+                    ? t('common.hide')
+                    : `${t('common.showPositions')} (${c.items.length})`}
                 </button>
                 <button style={s.editBtn} onClick={() => openEdit(c)}>
-                  Изменить
+                  {t('common.edit')}
                 </button>
                 <button style={s.delBtn} onClick={() => handleDelete(c.id)}>
-                  Удалить
+                  {t('common.delete')}
                 </button>
               </div>
             </div>
 
-            {/* Кнопки скачивания договоров */}
             <div style={{ padding: '0 20px 12px', display: 'flex', gap: 8 }}>
-          <button
-            style={s.generatePdfBtn}
-            onClick={() => downloadContract(c.id, 'pdf')}>
-            📕 Скачать PDF договор
-          </button>
+              <button
+                style={s.generatePdfBtn}
+                onClick={() => downloadContract(c.id)}>
+                📕 {t('admin.contracts.buttons.downloadPdf')}
+              </button>
             </div>
 
             {expanded === c.id && (
@@ -267,27 +289,27 @@ export default function Contracts() {
                 <table style={s.table}>
                   <thead>
                     <tr style={{ background: '#f9f9f9' }}>
-                      <th style={s.th}>Изделие</th>
-                      <th style={s.th}>Кол-во</th>
-                      <th style={s.th}>Цена</th>
-                      <th style={s.th}>Дата производства</th>
-                      <th style={s.th}>Статус</th>
-                      <th style={s.th}>Действия</th>
+                      <th style={s.th}>{t('admin.contracts.table.product')}</th>
+                      <th style={s.th}>{t('admin.contracts.table.quantity')}</th>
+                      <th style={s.th}>{t('admin.contracts.table.price')}</th>
+                      <th style={s.th}>{t('admin.contracts.table.productionDate')}</th>
+                      <th style={s.th}>{t('admin.contracts.table.status')}</th>
+                      <th style={s.th}>{t('admin.contracts.table.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {c.items.length === 0 && (
                       <tr>
                         <td colSpan={6} style={{ padding: 20, color: '#aaa', textAlign: 'center' }}>
-                          Позиций нет
+                          {t('admin.contracts.table.noItems')}
                         </td>
                       </tr>
                     )}
                     {c.items.map(item => (
                       <tr key={item.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                         <td style={s.td}>{item.product_name}</td>
-                        <td style={s.td}>{item.quantity} шт.</td>
-                        <td style={s.td}>{Number(item.price).toLocaleString()} сум</td>
+                        <td style={s.td}>{item.quantity} {t('common.units.pcs')}</td>
+                        <td style={s.td}>{Number(item.price).toLocaleString()} {t('common.currency')}</td>
                         <td style={s.td}>
                           {item.production_date
                             ? new Date(item.production_date).toLocaleDateString('ru-RU')
@@ -295,24 +317,26 @@ export default function Contracts() {
                         </td>
                         <td style={s.td}>
                           <span style={{
-                            padding: '3px 10px', borderRadius: 20, fontWeight: 600, fontSize: 12,
+                            padding: '3px 10px',
+                            borderRadius: 20,
+                            fontWeight: 600,
+                            fontSize: 12,
                             background: item.status === 'completed' ? '#dcfce7' :
                                         item.status === 'in_progress' ? '#dbeafe' : '#f3f4f6',
                             color: item.status === 'completed' ? '#16a34a' :
                                    item.status === 'in_progress' ? '#1d4ed8' : '#888',
                           }}>
-                            {item.status === 'completed' ? '✅ Выполнено' :
-                             item.status === 'in_progress' ? '🔨 В производстве' : '⏳ Ожидает'}
+                            {t(`status.${item.status}`)}
                           </span>
                         </td>
                         <td style={s.td}>
                           {item.status === 'pending' && (
-                            <button style={s.startBtn} onClick={() => handleStartProduction(item, c.id)}>
-                              ▶ В производство
+                            <button style={s.startBtn} onClick={() => handleStartProduction(item)}>
+                              ▶ {t('admin.contracts.buttons.startProduction')}
                             </button>
                           )}
                           <button style={s.delBtn} onClick={() => handleRemoveItem(item.id)}>
-                            Удалить
+                            {t('common.delete')}
                           </button>
                         </td>
                       </tr>
@@ -324,29 +348,43 @@ export default function Contracts() {
                   <form onSubmit={(e) => handleAddItem(e, c.id)} style={s.itemForm}>
                     <select style={s.select} required value={itemForm.product}
                       onChange={e => setItemForm({ ...itemForm, product: e.target.value })}>
-                      <option value="">— Изделие —</option>
+                      <option value="">{t('admin.contracts.form.selectProduct')}</option>
                       {products.map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>
-                    <input style={{ ...s.input, width: 80 }} type="number" min="1" placeholder="Кол-во"
+                    <input
+                      style={{ ...s.input, width: 80 }}
+                      type="number"
+                      min="1"
+                      placeholder={t('common.quantity')}
                       value={itemForm.quantity}
-                      onChange={e => setItemForm({ ...itemForm, quantity: e.target.value })} />
-                    <input style={{ ...s.input, width: 140 }} type="number" placeholder="Цена (сум)" required
+                      onChange={e => setItemForm({ ...itemForm, quantity: e.target.value })}
+                    />
+                    <input
+                      style={{ ...s.input, width: 140 }}
+                      type="number"
+                      placeholder={t('common.price')}
                       value={itemForm.price}
-                      onChange={e => setItemForm({ ...itemForm, price: e.target.value })} />
-                    <input style={{ ...s.input, width: 160 }} type="date"
+                      onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
+                    />
+                    <input
+                      style={{ ...s.input, width: 160 }}
+                      type="date"
                       value={itemForm.production_date}
-                      onChange={e => setItemForm({ ...itemForm, production_date: e.target.value })} />
-                    <button style={s.btn} type="submit">+ Добавить</button>
+                      onChange={e => setItemForm({ ...itemForm, production_date: e.target.value })}
+                    />
+                    <button style={s.btn} type="submit">{t('common.add')}</button>
                     <button style={s.cancelBtn} type="button" onClick={() => setShowItemForm(null)}>
-                      Отмена
+                      {t('common.cancel')}
                     </button>
                   </form>
                 ) : (
-                  <button style={{ ...s.expandBtn, marginTop: 12 }}
-                    onClick={() => setShowItemForm(c.id)}>
-                    + Добавить изделие
+                  <button
+                    style={{ ...s.expandBtn, marginTop: 12 }}
+                    onClick={() => setShowItemForm(c.id)}
+                  >
+                    {t('admin.contracts.buttons.addItem')}
                   </button>
                 )}
               </div>
@@ -402,6 +440,7 @@ const s = {
   table:      { width: '100%', borderCollapse: 'collapse', marginBottom: 12 },
   th:         { padding: '10px 12px', textAlign: 'left', fontWeight: 600, fontSize: 13 },
   td:         { padding: '10px 12px', fontSize: 14 },
+  badge:      { padding: '4px 10px', borderRadius: 20, fontWeight: 600, fontSize: 12 },
   itemForm:   { display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap',
                 paddingTop: 12, borderTop: '1px dashed #e0e0e0', marginTop: 8 },
   startBtn:   { background: '#dbeafe', color: '#1d4ed8', border: 'none',

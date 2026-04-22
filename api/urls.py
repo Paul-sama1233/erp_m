@@ -11,7 +11,7 @@ from .views import (
     ProductViewSet, ProductMaterialViewSet,
     PersonViewSet, ProductionViewSet, ProductionStageViewSet,
     ContractViewSet, ContractProductViewSet,
-    MyStagesView, DashboardStatsView, StageActionView,
+    MyStagesView, DashboardStatsView, StageActionView, ProductStageTemplateViewSet,
 )
 
 # Новый импорт для генерации договоров
@@ -26,6 +26,8 @@ router.register(r'persons', PersonViewSet)
 router.register(r'productions', ProductionViewSet)
 router.register(r'production-stages', ProductionStageViewSet)
 router.register(r'contracts', ContractViewSet)
+
+router.register(r'product-stage-templates', ProductStageTemplateViewSet)
 router.register(r'contract-products', ContractProductViewSet)
 
 urlpatterns = [

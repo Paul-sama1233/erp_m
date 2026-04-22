@@ -1,0 +1,396 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Изменить",
+    "create": "Создать",
+    "add": "Добавить",
+    "error": "Ошибка",
+    "hide": "▲ Скрыть",
+    "showPositions": "▼ Позиции",
+    "quantity": "Кол-во",
+    "price": "Цена",
+    "units": {
+      "pcs": "шт."
+    },
+    "currency": "сум"
+  },
+
+  "status": {
+    "pending": "Ожидает",
+    "in_progress": "В работе",
+    "completed": "Завершено"
+  },
+
+  "stages": {
+    "frame": "Каркас",
+    "springs": "Пружины / Механизмы",
+    "sewing": "Шитьё",
+    "foam": "Поролон",
+    "upholstery": "Обивка"
+  },
+
+  "specializations": {
+    "frame": "Каркасник",
+    "springs": "Пружинщик / Механик",
+    "sewing": "Швея",
+    "foam": "Поролонщик",
+    "upholstery": "Обивщик",
+    "none": "Без специализации"
+  },
+
+  "dashboard": {
+    "title": "Обзор цеха",
+    "materials_total": "Материалов на складе",
+    "low_stock": "Мало на складе",
+    "products": "Изделий",
+    "productions": "Производств"
+  },
+
+  "worker": {
+    "layout": {
+      "role": "Работник цеха",
+      "menu": {
+        "dashboard": "Главная",
+        "tasks": "Изделия",
+        "calendar": "Календарь"
+      },
+      "buttons": {
+        "logout": "Выйти"
+      }
+    },
+    "home": {
+      "roleLabel": "Роль:",
+      "roleValue": "Работник цеха",
+      "specializationLabel": "Специализация:"
+    },
+    "dashboard": {
+      "greeting": "Добро пожаловать, {{name}}!",
+      "subtitle": "Ваши задачи на производстве",
+      "stats": {
+        "pending": "Ожидают",
+        "inProgress": "В работе",
+        "completed": "Завершено"
+      },
+      "section": {
+        "pending": "⏳ Ожидают начала",
+        "inProgress": "🔨 Сейчас в работе",
+        "completed": "✅ Завершённые"
+      },
+      "modal": {
+        "title": "Завершение: {{stage}}",
+        "description": "Укажите количество списываемых материалов",
+        "noMaterials": "Нет материалов для списания",
+        "stock": "На складе:",
+        "norm": "Норма:"
+      },
+      "empty": {
+        "noTasks": "Нет назначенных задач"
+      },
+      "buttons": {
+        "start": "▶ Начать этап",
+        "starting": "Запуск...",
+        "complete": "✅ Завершить этап",
+        "completing": "Завершение...",
+        "cancel": "Отмена",
+        "logout": "Выйти"
+      }
+    },
+    "tasks": {
+      "title": "Мои изделия",
+      "section": {
+        "active": "Активные задачи",
+        "completed": "Завершённые"
+      },
+      "modal": {
+        "title": "Завершение: {{stage}}",
+        "product": "Изделие",
+        "noMaterials": "Нет материалов для списания",
+        "stock": "Склад:",
+        "norm": "Норма:"
+      },
+      "empty": {
+        "noTasks": "Нет назначенных задач"
+      },
+      "buttons": {
+        "start": "▶ Начать этап",
+        "starting": "Запуск...",
+        "complete": "✅ Завершить этап",
+        "completing": "Завершение...",
+        "cancel": "Отмена"
+      }
+    },
+    "calendar": {
+      "title": "Календарь производства",
+      "noTasks": "Нет запланированных задач"
+    }
+  },
+
+  "admin": {
+    "layout": {
+      "role": "Администратор",
+      "menu": {
+        "dashboard": "Главная",
+        "materials": "Материалы",
+        "products": "Изделия",
+        "productions": "Производство",
+        "contracts": "Договоры",
+        "supply": "Поставка",
+        "persons": "Сотрудники",
+        "reports": "Отчеты"
+      },
+      "buttons": {
+        "logout": "Выйти"
+      }
+    },
+    "dashboard": {
+      "stats": {
+        "materials": "Материалов на складе",
+        "lowStock": "Мало на складе",
+        "products": "Изделий",
+        "productions": "Производств",
+        "active": "Активных производств",
+        "contracts": "Договоров",
+        "persons": "Сотрудников",
+        "requests": "Запросов на закупку"
+      },
+      "recent": {
+        "title": "Последние производства",
+        "table": {
+          "product": "Изделие",
+          "client": "Клиент",
+          "date": "Дата",
+          "status": "Статус"
+        }
+      },
+      "lowStock": {
+        "title": "Материалы на исходе",
+        "allGood": "Все материалы в норме"
+      },
+      "empty": "Нет данных"
+    },
+    "contracts": {
+      "title": "Договоры",
+      "buttons": {
+        "newContract": "+ Новый договор",
+        "downloadPdf": "Скачать PDF договор",
+        "startProduction": "В производство",
+        "addItem": "+ Добавить изделие"
+      },
+      "form": {
+        "newTitle": "Новый договор",
+        "editTitle": "Редактировать договор",
+        "clientName": "ФИО клиента",
+        "phone": "Телефон",
+        "address": "Адрес",
+        "selectProduct": "— Изделие —"
+      },
+      "table": {
+        "product": "Изделие",
+        "quantity": "Кол-во",
+        "price": "Цена",
+        "productionDate": "Дата производства",
+        "status": "Статус",
+        "actions": "Действия",
+        "noItems": "Позиций нет"
+      },
+      "address": {
+        "errorEmpty": "Введите адрес",
+        "errorCheck": "Ошибка проверки адреса",
+        "checking": "Проверка...",
+        "check": "Проверить"
+      },
+      "confirm": {
+        "deleteContract": "Удалить договор?",
+        "deleteItem": "Удалить позицию?"
+      },
+      "alert": {
+        "productionStarted": "✅ Производство для \"{{product}}\" запущено!"
+      },
+      "empty": "Договоров пока нет"
+    },
+    "materials": {
+      "title": "Материалы на складе",
+      "buttons": {
+        "add": "+ Добавить материал"
+      },
+      "form": {
+        "name": "Название",
+        "unit": "Единица (кг, м², шт)",
+        "quantity": "Количество",
+        "pricePerUnit": "Цена за единицу",
+        "minQuantity": "Мин. остаток",
+        "specialization": "Специализация (кому принадлежит)"
+      },
+      "table": {
+        "name": "Название",
+        "unit": "Единица",
+        "quantity": "Количество",
+        "price": "Цена за ед.",
+        "actions": "Действия",
+        "minQuantity": "Минимальное количество",
+        "specialization": "Специализация"
+      },
+      "confirm": {
+        "delete": "Удалить материал?"
+      },
+      "empty": "Материалов пока нет"
+    },
+    "persons": {
+      "title": "Сотрудники цеха",
+      "buttons": {
+        "add": "+ Добавить сотрудника"
+      },
+      "form": {
+        "newTitle": "Новый сотрудник",
+        "editTitle": "Редактирование",
+        "fullName": "ФИО",
+        "phone": "Телефон",
+        "specialization": "Специализация"
+      },
+      "confirm": {
+        "delete": "Удалить сотрудника?"
+      },
+      "empty": "Сотрудников пока нет"
+    },
+    "productions": {
+      "title": "Производство",
+      "buttons": {
+        "new": "+ Запустить производство",
+        "create": "Запустить",
+        "showStages": "▼ Этапы",
+        "complete": "✅ Завершить",
+        "completing": "Завершение...",
+        "addStage": "+ Назначить этап"
+      },
+      "form": {
+        "newTitle": "Новое производство",
+        "product": "Изделие",
+        "selectProduct": "— Выберите изделие —",
+        "contract": "Договор (необязательно)",
+        "noContract": "— Без договора —",
+        "selectStage": "— Этап —",
+        "selectWorker": "— Работник —",
+        "order": "Порядок"
+      },
+      "table": {
+        "stage": "Этап",
+        "worker": "Работник",
+        "status": "Статус",
+        "actions": "Действия"
+      },
+      "confirm": {
+        "complete": "Завершить производство? Материалы будут списаны со склада.",
+        "delete": "Удалить производство?",
+        "deleteStage": "Удалить этот этап?"
+      },
+      "alert": {
+        "completed": "✅ Производство завершено, материалы списаны!",
+        "insufficientMaterials": "❌ Недостаточно материалов:",
+        "error": "Ошибка при завершении производства"
+      },
+      "empty": "Производств пока нет"
+    },
+    "products": {
+      "title": "Изделия",
+      "buttons": {
+        "add": "+ Добавить изделие",
+        "create": "Создать изделие",
+        "showMaterials": "▼ Материалы",
+        "remove": "Убрать"
+      },
+      "form": {
+        "newTitle": "Новое изделие",
+        "editTitle": "Редактировать изделие",
+        "name": "Название изделия",
+        "namePlaceholder": "Диван Милан, Кухня Классик...",
+        "price": "Цена продажи (сум)",
+        "selectMaterial": "— Выберите материал —"
+      },
+      "table": {
+        "material": "Материал",
+        "quantity": "Кол-во на 1 изделие",
+        "actions": "Действия",
+        "noMaterials": "Материалы не добавлены"
+      },
+      "confirm": {
+        "delete": "Удалить изделие? Все связанные материалы тоже удалятся."
+      },
+      "alert": {
+        "noProductId": "Ошибка: ID изделия не определён"
+      },
+      "empty": "Изделий пока нет"
+    },
+    "reports": {
+      "title": "Отчёты",
+      "tabs": {
+        "materials": "📦 Движение материалов",
+        "profit": "💰 Прибыль по изделиям",
+        "contracts": "📋 Статистика договоров"
+      },
+      "materials": {
+        "writeOffs": "Списаний",
+        "supplies": "Поставок",
+        "totalTransactions": "Всего транзакций",
+        "supply": "+ Поставка",
+        "writeOff": "- Списание",
+        "table": {
+          "date": "Дата",
+          "material": "Материал",
+          "type": "Тип",
+          "quantity": "Количество",
+          "comment": "Комментарий"
+        }
+      },
+      "profit": {
+        "productsProduced": "Изделий произведено",
+        "totalRevenue": "Общая выручка",
+        "table": {
+          "product": "Изделие",
+          "price": "Цена продажи",
+          "count": "Кол-во производств",
+          "revenue": "Выручка"
+        }
+      },
+      "contracts": {
+        "totalContracts": "Всего договоров",
+        "itemsOrdered": "Позиций заказано",
+        "totalAmount": "Общая сумма",
+        "table": {
+          "client": "Клиент",
+          "phone": "Телефон",
+          "date": "Дата",
+          "items": "Позиций",
+          "amount": "Сумма"
+        }
+      },
+      "empty": "Нет данных"
+    },
+    "supply": {
+      "title": "Поставки материалов",
+      "buttons": {
+        "new": "+ Новая поставка",
+        "submit": "Принять поставку"
+      },
+      "form": {
+        "title": "Принять поставку",
+        "material": "Материал",
+        "selectMaterial": "— Выберите материал —",
+        "stock": "(остаток: {{quantity}} {{unit}})",
+        "quantity": "Количество",
+        "quantityPlaceholder": "Введите количество",
+        "comment": "Комментарий (поставщик, накладная)",
+        "commentPlaceholder": "Поставщик Ахмадов, накладная №123"
+      },
+      "table": {
+        "date": "Дата",
+        "material": "Материал",
+        "quantity": "Количество",
+        "comment": "Комментарий"
+      },
+      "empty": "Поставок пока нет"
+    }
+  }
+}

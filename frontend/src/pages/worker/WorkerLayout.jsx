@@ -1,16 +1,18 @@
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';   // ← Добавлено
 
 const menuItems = [
-  { path: '/worker/dashboard', label: 'Главная',  icon: '🏠' },
-  { path: '/worker/tasks',     label: 'Изделия',  icon: '🪑' },
-  { path: '/worker/calendar',  label: 'Календарь', icon: '📅' },
+  { path: '/worker/dashboard', key: 'dashboard' },
+  { path: '/worker/tasks',     key: 'tasks' },
+  { path: '/worker/calendar',  key: 'calendar' },
 ];
 
 export default function WorkerLayout() {
   const { user, logout } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const { t } = useTranslation();                  // ← Добавлено
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <div style={s.wrapper}>
@@ -19,26 +21,38 @@ export default function WorkerLayout() {
           <div style={s.avatar}>{user?.username?.charAt(0).toUpperCase()}</div>
           <div>
             <div style={s.username}>{user?.username}</div>
-            <div style={s.role}>Работник цеха</div>
+            <div style={s.role}>{t('worker.layout.role')}</div>
           </div>
         </div>
+
         <nav style={s.nav}>
           {menuItems.map(item => (
-            <button key={item.path}
+            <button
+              key={item.path}
               style={{
                 ...s.navItem,
                 ...(location.pathname === item.path ? s.navItemActive : {})
               }}
-              onClick={() => navigate(item.path)}>
-              <span style={s.icon}>{item.icon}</span>
-              {item.label}
+              onClick={() => navigate(item.path)}
+            >
+              <span style={s.icon}>
+                {item.key === 'dashboard' && '🏠'}
+                {item.key === 'tasks' && '🪑'}
+                {item.key === 'calendar' && '📅'}
+              </span>
+              {t(`worker.layout.menu.${item.key}`)}
             </button>
           ))}
         </nav>
-        <button style={s.logoutBtn} onClick={() => { logout(); navigate('/login'); }}>
-          Выйти
+
+        <button
+          style={s.logoutBtn}
+          onClick={() => { logout(); navigate('/login'); }}
+        >
+          {t('worker.layout.buttons.logout')}
         </button>
       </aside>
+
       <main style={s.main}>
         <Outlet />
       </main>

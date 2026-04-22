@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // <-- Импорт хука
 
 const API = 'http://127.0.0.1:8000';
 
 export default function AdminDashboard() {
+  const { t, i18n } = useTranslation(); // <-- Инициализация
   const [stats, setStats]   = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -18,23 +20,23 @@ export default function AdminDashboard() {
       .catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <p style={{ padding: 40 }}>Загрузка...</p>;
-  if (!stats)  return <p style={{ padding: 40 }}>Ошибка загрузки статистики</p>;
+  if (loading) return <p style={{ padding: 40 }}>{t('common.loading')}</p>;
+  if (!stats)  return <p style={{ padding: 40 }}>{t('common.error')}</p>; // Используем базовый перевод ошибки
 
   const statCards = [
-    { label: 'Материалов на складе', value: stats.total_materials,    icon: '📦', color: '#3b82f6', path: '/admin/materials' },
-    { label: 'Мало на складе',       value: stats.low_stock_materials, icon: '⚠️', color: '#ef4444', path: '/admin/materials' },
-    { label: 'Изделий',              value: stats.total_products,      icon: '🪑', color: '#8b5cf6', path: '/admin/products' },
-    { label: 'Производств',          value: stats.total_productions,   icon: '🏭', color: '#f59e0b', path: '/admin/productions' },
-    { label: 'Активных производств', value: stats.active_productions,  icon: '🔨', color: '#10b981', path: '/admin/productions' },
-    { label: 'Договоров',            value: stats.total_contracts,     icon: '📋', color: '#6366f1', path: '/admin/contracts' },
-    { label: 'Сотрудников',          value: stats.total_persons,       icon: '👷', color: '#14b8a6', path: '/admin/persons' },
-    { label: 'Запросов на закупку',  value: stats.pending_requests,    icon: '🛒', color: '#f97316', path: '/admin/supply' },
+    { label: t('admin.dashboard.stats.materials'),   value: stats.total_materials,     icon: '📦', color: '#3b82f6', path: '/admin/materials' },
+    { label: t('admin.dashboard.stats.lowStock'),    value: stats.low_stock_materials, icon: '⚠️', color: '#ef4444', path: '/admin/materials' },
+    { label: t('admin.dashboard.stats.products'),    value: stats.total_products,      icon: '🪑', color: '#8b5cf6', path: '/admin/products' },
+    { label: t('admin.dashboard.stats.productions'), value: stats.total_productions,   icon: '🏭', color: '#f59e0b', path: '/admin/productions' },
+    { label: t('admin.dashboard.stats.active'),      value: stats.active_productions,  icon: '🔨', color: '#10b981', path: '/admin/productions' },
+    { label: t('admin.dashboard.stats.contracts'),   value: stats.total_contracts,     icon: '📋', color: '#6366f1', path: '/admin/contracts' },
+    { label: t('admin.dashboard.stats.persons'),     value: stats.total_persons,       icon: '👷', color: '#14b8a6', path: '/admin/persons' },
+    { label: t('admin.dashboard.stats.requests'),    value: stats.pending_requests,    icon: '🛒', color: '#f97316', path: '/admin/supply' },
   ];
 
   return (
     <div style={s.page}>
-      <h2 style={s.title}>Обзор цеха</h2>
+      <h2 style={s.title}>{t('dashboard.title')}</h2>
 
       {/* Карточки статистики */}
       <div style={s.grid}>
@@ -51,17 +53,17 @@ export default function AdminDashboard() {
       <div style={s.bottom}>
         {/* Последние производства */}
         <div style={s.block}>
-          <h3 style={s.blockTitle}>🏭 Последние производства</h3>
+          <h3 style={s.blockTitle}>🏭 {t('admin.dashboard.recent.title')}</h3>
           {stats.recent_productions.length === 0 ? (
-            <p style={s.empty}>Нет данных</p>
+            <p style={s.empty}>{t('admin.dashboard.empty')}</p>
           ) : (
             <table style={s.table}>
               <thead>
                 <tr style={{ background: '#f9f9f9' }}>
-                  <th style={s.th}>Изделие</th>
-                  <th style={s.th}>Клиент</th>
-                  <th style={s.th}>Дата</th>
-                  <th style={s.th}>Статус</th>
+                  <th style={s.th}>{t('admin.dashboard.recent.table.product')}</th>
+                  <th style={s.th}>{t('admin.dashboard.recent.table.client')}</th>
+                  <th style={s.th}>{t('admin.dashboard.recent.table.date')}</th>
+                  <th style={s.th}>{t('admin.dashboard.recent.table.status')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -70,7 +72,8 @@ export default function AdminDashboard() {
                     <td style={s.td}>{p.product_name}</td>
                     <td style={s.td}>{p.client_name}</td>
                     <td style={s.td}>
-                      {new Date(p.created_at).toLocaleDateString('ru-RU')}
+                      {/* Динамический язык для даты */}
+                      {new Date(p.created_at).toLocaleDateString(i18n.language)}
                     </td>
                     <td style={s.td}>
                       <span style={{
@@ -78,7 +81,8 @@ export default function AdminDashboard() {
                         background: p.status === 'started' ? '#dbeafe' : '#dcfce7',
                         color:      p.status === 'started' ? '#1d4ed8' : '#16a34a',
                       }}>
-                        {p.status === 'started' ? 'В работе' : 'Завершено'}
+                        {/* Использование глобального словаря статусов */}
+                        {p.status === 'started' ? t('status.in_progress') : t('status.completed')}
                       </span>
                     </td>
                   </tr>
@@ -90,9 +94,9 @@ export default function AdminDashboard() {
 
         {/* Материалы с низким остатком */}
         <div style={s.block}>
-          <h3 style={s.blockTitle}>⚠️ Материалы на исходе</h3>
+          <h3 style={s.blockTitle}>⚠️ {t('admin.dashboard.lowStock.title')}</h3>
           {stats.low_stock.length === 0 ? (
-            <p style={s.empty}>Все материалы в норме ✅</p>
+            <p style={s.empty}>{t('admin.dashboard.lowStock.allGood')} ✅</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {stats.low_stock.map(m => (

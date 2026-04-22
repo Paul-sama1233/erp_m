@@ -1,19 +1,21 @@
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // ← Добавлен импорт
 
 const menuItems = [
-  { path: '/admin/dashboard',  label: 'Главная',   icon: '🏠' },
-  { path: '/admin/materials',  label: 'Материалы', icon: '📦' },
-  { path: '/admin/products',   label: 'Изделия',   icon: '🪑' },
-  { path: '/admin/productions', label: 'Производство', icon: '🏭' },
-  { path: '/admin/contracts',  label: 'Договоры',  icon: '📋' },
-  { path: '/admin/supply',     label: 'Поставка',  icon: '🚚' },
-  { path: '/admin/persons',  label: 'Сотрудники',  icon: '👷' },
-  { path: '/admin/reports',    label: 'Отчеты',    icon: '📊'},
+  { path: '/admin/dashboard',   key: 'dashboard',   icon: '🏠' },
+  { path: '/admin/materials',   key: 'materials',   icon: '📦' },
+  { path: '/admin/products',    key: 'products',    icon: '🪑' },
+  { path: '/admin/productions', key: 'productions', icon: '🏭' },
+  { path: '/admin/contracts',   key: 'contracts',   icon: '📋' },
+  { path: '/admin/supply',      key: 'supply',      icon: '🚚' },
+  { path: '/admin/persons',     key: 'persons',     icon: '👷' },
+  { path: '/admin/reports',     key: 'reports',     icon: '📊' },
 ];
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const { t, i18n } = useTranslation(); // ← Инициализация хука
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -38,17 +40,31 @@ export default function AdminLayout() {
               onClick={() => navigate(item.path)}
             >
               <span style={s.icon}>{item.icon}</span>
-              {item.label}
+              {t(`admin.layout.menu.${item.key}`)}
             </button>
           ))}
         </nav>
         <div style={s.bottom}>
+
+          {/* Выбор языка */}
+          <div style={s.langSwitcher}>
+            <select
+              style={s.langSelect}
+              value={i18n.language}
+              onChange={(e) => i18n.changeLanguage(e.target.value)}
+            >
+              <option value="ru" style={{color: '#000'}}>Русский</option>
+              <option value="uz" style={{color: '#000'}}>O'zbek</option>
+              <option value="en" style={{color: '#000'}}>English</option>
+            </select>
+          </div>
+
           <div style={s.userInfo}>
             <div style={s.username}>{user?.username}</div>
-            <div style={s.role}>Администратор</div>
+            <div style={s.role}>{t('admin.layout.role')}</div>
           </div>
           <button style={s.logoutBtn} onClick={handleLogout}>
-            Выйти
+            {t('admin.layout.buttons.logout')}
           </button>
         </div>
       </aside>
@@ -89,6 +105,12 @@ const s = {
   bottom:   {
     padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.1)',
     marginTop: 'auto',
+  },
+  langSwitcher: { marginBottom: 16 },
+  langSelect: {
+    width: '100%', padding: '8px 12px', borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)',
+    color: '#fff', fontSize: 13, cursor: 'pointer', outline: 'none'
   },
   userInfo: { marginBottom: 12 },
   username: { color: '#fff', fontWeight: 600, fontSize: 14 },

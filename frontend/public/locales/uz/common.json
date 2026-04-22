@@ -1,0 +1,370 @@
+{
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "create": "Yaratish",
+    "add": "Qo'shish",
+    "error": "Xato",
+    "hide": "▲ Yashirish",
+    "showPositions": "▼ Pozitsiyalar",
+    "quantity": "Soni",
+    "price": "Narxi",
+    "units": {
+      "pcs": "dona."
+    },
+    "currency": "so'm"
+  },
+
+  "dashboard": {
+    "title": "Tsex sharhi",
+    "materials_total": "Ombordagi materiallar",
+    "low_stock": "Omborda kam qolgan",
+    "products": "Mahsulotlar",
+    "productions": "Ishlab chiqarishlar"
+  },
+
+  "stages": {
+    "frame": "Karkas",
+    "springs": "Prujinalar / Mexanizmlar",
+    "sewing": "Tikuv",
+    "foam": "Porolon",
+    "upholstery": "Qoplama"
+  },
+
+  "status": {
+    "pending": "Kutilmoqda",
+    "in_progress": "Jarayonda",
+    "completed": "Tugallandi"
+  },
+
+  "specializations": {
+    "frame": "Karkaschi",
+    "springs": "Prujinachi / Mexanik",
+    "sewing": "Tikuvchi",
+    "foam": "Porolonchi",
+    "upholstery": "Qoplamachi",
+    "none": "Mutaxassisliksiz"
+  },
+
+  "worker": {
+    "layout": {
+      "role": "Tsex ishchisi",
+      "menu": {
+        "dashboard": "Asosiy",
+        "tasks": "Mahsulotlar",
+        "calendar": "Taqvim"
+      },
+      "buttons": {
+        "logout": "Chiqish"
+      }
+    },
+    "dashboard": {
+      "greeting": "Xush kelibsiz, {{name}}!",
+      "subtitle": "Ishlab chiqarishdagi vazifalaringiz",
+      "stats": {
+        "pending": "Kutilmoqda",
+        "inProgress": "Jarayonda",
+        "completed": "Tugallandi"
+      },
+      "section": {
+        "inProgress": "🔨 Hozir jarayonda",
+        "pending": "⏳ Boshlanishi kutilmoqda",
+        "completed": "✅ Tugallanganlar"
+      },
+      "modal": {
+        "title": "Tugatish: {{stage}}",
+        "description": "Hisobdan chiqariladigan materiallar miqdorini kiriting",
+        "noMaterials": "Hisobdan chiqarish uchun materiallar yo'q",
+        "stock": "Omborda:",
+        "norm": "Me'yor:"
+      },
+      "empty": {
+        "noTasks": "Biriktirilgan vazifalar yo'q"
+      },
+      "buttons": {
+        "start": "▶ Bosqichni boshlash",
+        "complete": "✅ Bosqichni tugatish",
+        "cancel": "Bekor qilish",
+        "logout": "Chiqish",
+        "starting": "Ishga tushirilmoqda...",
+        "completing": "Tugallanmoqda..."
+      }
+    },
+    "tasks": {
+      "title": "Mening mahsulotlarim",
+      "section": {
+        "active": "Faol vazifalar",
+        "completed": "Tugallanganlar"
+      },
+      "modal": {
+        "title": "Tugatish: {{stage}}",
+        "product": "Mahsulot",
+        "noMaterials": "Hisobdan chiqarish uchun materiallar yo'q",
+        "stock": "Ombor:",
+        "norm": "Me'yor:"
+      },
+      "empty": {
+        "noTasks": "Biriktirilgan vazifalar yo'q"
+      },
+      "buttons": {
+        "start": "▶ Bosqichni boshlash",
+        "complete": "✅ Bosqichni tugatish",
+        "cancel": "Bekor qilish",
+        "starting": "Ishga tushirilmoqda...",
+        "completing": "Tugallanmoqda..."
+      }
+    },
+    "calendar": {
+      "title": "Ishlab chiqarish taqvimi",
+      "noTasks": "Rejalashtirilgan vazifalar yo'q"
+    },
+    "home": {
+      "roleLabel": "Rol:",
+      "roleValue": "Tsex ishchisi",
+      "specializationLabel": "Mutaxassislik:"
+    }
+  },
+
+  "admin": {
+    "layout": {
+      "role": "Administrator",
+      "menu": {
+        "dashboard": "Asosiy",
+        "materials": "Materiallar",
+        "products": "Mahsulotlar",
+        "productions": "Ishlab chiqarish",
+        "contracts": "Shartnomalar",
+        "supply": "Ta'minot",
+        "persons": "Xodimlar",
+        "reports": "Hisobotlar"
+      },
+      "buttons": {
+        "logout": "Chiqish"
+      }
+    },
+    "contracts": {
+      "title": "Shartnomalar",
+      "buttons": {
+        "newContract": "+ Yangi shartnoma",
+        "downloadPdf": "PDF shartnomani yuklab olish",
+        "startProduction": "Ishlab chiqarishga",
+        "addItem": "+ Mahsulot qo'shish"
+      },
+      "form": {
+        "newTitle": "Yangi shartnoma",
+        "editTitle": "Shartnomani tahrirlash",
+        "clientName": "Mijozning F.I.Sh",
+        "phone": "Telefon",
+        "address": "Manzil",
+        "selectProduct": "— Mahsulot —"
+      },
+      "table": {
+        "product": "Mahsulot",
+        "quantity": "Soni",
+        "price": "Narxi",
+        "productionDate": "Ishlab chiqarish sanasi",
+        "status": "Holati",
+        "actions": "Harakatlar",
+        "noItems": "Pozitsiyalar yo'q"
+      },
+      "address": {
+        "errorEmpty": "Manzilni kiriting",
+        "errorCheck": "Manzilni tekshirishda xatolik",
+        "checking": "Tekshirilmoqda...",
+        "check": "Tekshirish"
+      },
+      "confirm": {
+        "deleteContract": "Shartnoma o'chirilsinmi?",
+        "deleteItem": "Pozitsiya o'chirilsinmi?"
+      },
+      "alert": {
+        "productionStarted": "✅ \"{{product}}\" uchun ishlab chiqarish boshlandi!"
+      },
+      "empty": "Hozircha shartnomalar yo'q"
+    },
+    "materials": {
+      "title": "Ombordagi materiallar",
+      "buttons": {
+        "add": "+ Material qo'shish"
+      },
+      "form": {
+        "name": "Nomi",
+        "unit": "Birlik (kg, m², dona)",
+        "quantity": "Miqdori",
+        "pricePerUnit": "Birlik narxi",
+        "minQuantity": "Min. qoldiq",
+        "specialization": "Mutaxassislik (kimga tegishli)"
+      },
+      "table": {
+        "name": "Nomi",
+        "unit": "Birligi",
+        "quantity": "Miqdori",
+        "price": "Birlik narxi",
+        "actions": "Harakatlar",
+        "minQuantity": "Minimal miqdor",
+        "specialization": "Mutaxassisligi"
+      },
+      "confirm": {
+        "delete": "Material o'chirilsinmi?"
+      },
+      "empty": "Hozircha materiallar yo'q"
+    },
+    "persons": {
+      "title": "Tsex xodimlari",
+      "buttons": {
+        "add": "+ Xodim qo'shish"
+      },
+      "form": {
+        "newTitle": "Yangi xodim",
+        "editTitle": "Tahrirlash",
+        "fullName": "F.I.Sh",
+        "phone": "Telefon",
+        "specialization": "Mutaxassislik"
+      },
+      "confirm": {
+        "delete": "Xodim o'chirilsinmi?"
+      },
+      "empty": "Hozircha xodimlar yo'q"
+    },
+    "productions": {
+      "title": "Ishlab chiqarish",
+      "buttons": {
+        "new": "+ Ishlab chiqarishni boshlash",
+        "create": "Boshlash",
+        "showStages": "▼ Bosqichlar",
+        "complete": "✅ Tugatish",
+        "completing": "Tugallanmoqda...",
+        "addStage": "+ Bosqich belgilash"
+      },
+      "form": {
+        "newTitle": "Yangi ishlab chiqarish",
+        "product": "Mahsulot",
+        "selectProduct": "— Mahsulotni tanlang —",
+        "contract": "Shartnoma (ixtiyoriy)",
+        "noContract": "— Shartnomasiz —",
+        "selectStage": "— Bosqich —",
+        "selectWorker": "— Ishchi —",
+        "order": "Tartib"
+      },
+      "table": {
+        "stage": "Bosqich",
+        "worker": "Ishchi",
+        "status": "Holati",
+        "actions": "Harakatlar"
+      },
+      "confirm": {
+        "complete": "Ishlab chiqarish tugatilsinmi? Materiallar ombordan hisobdan chiqariladi.",
+        "delete": "Ishlab chiqarish o'chirilsinmi?",
+        "deleteStage": "Bu bosqich o'chirilsinmi?"
+      },
+      "alert": {
+        "completed": "✅ Ishlab chiqarish tugatildi, materiallar hisobdan chiqarildi!",
+        "insufficientMaterials": "❌ Materiallar yetarli emas:",
+        "error": "Ishlab chiqarishni tugatishda xatolik"
+      },
+      "empty": "Hozircha ishlab chiqarish yo'q"
+    },
+    "products": {
+      "title": "Mahsulotlar",
+      "buttons": {
+        "add": "+ Mahsulot qo'shish",
+        "create": "Mahsulot yaratish",
+        "showMaterials": "▼ Materiallar",
+        "remove": "Olib tashlash"
+      },
+      "form": {
+        "newTitle": "Yangi mahsulot",
+        "editTitle": "Mahsulotni tahrirlash",
+        "name": "Mahsulot nomi",
+        "namePlaceholder": "Milan divani, Klassik oshxona...",
+        "price": "Sotish narxi (so'm)",
+        "selectMaterial": "— Materialni tanlang —"
+      },
+      "table": {
+        "material": "Material",
+        "quantity": "1 ta mahsulot uchun soni",
+        "actions": "Harakatlar",
+        "noMaterials": "Materiallar qo'shilmagan"
+      },
+      "confirm": {
+        "delete": "Mahsulot o'chirilsinmi? Barcha bog'liq materiallar ham o'chiriladi."
+      },
+      "alert": {
+        "noProductId": "Xato: Mahsulot ID si aniqlanmadi"
+      },
+      "empty": "Hozircha mahsulotlar yo'q"
+    },
+    "reports": {
+      "title": "Hisobotlar",
+      "tabs": {
+        "materials": "📦 Materiallar harakati",
+        "profit": "💰 Mahsulotlar bo'yicha foyda",
+        "contracts": "📋 Shartnomalar statistikasi"
+      },
+      "materials": {
+        "writeOffs": "Hisobdan chiqarishlar",
+        "supplies": "Ta'minotlar",
+        "totalTransactions": "Jami tranzaksiyalar",
+        "supply": "+ Ta'minot",
+        "writeOff": "- Hisobdan chiqarish",
+        "table": {
+          "date": "Sana",
+          "material": "Material",
+          "type": "Turi",
+          "quantity": "Miqdori",
+          "comment": "Izoh"
+        }
+      },
+      "profit": {
+        "productsProduced": "Ishlab chiqarilgan mahsulotlar",
+        "totalRevenue": "Umumiy daromad",
+        "table": {
+          "product": "Mahsulot",
+          "price": "Sotish narxi",
+          "count": "Ishlab chiqarishlar soni",
+          "revenue": "Daromad"
+        }
+      },
+      "contracts": {
+        "totalContracts": "Jami shartnomalar",
+        "itemsOrdered": "Buyurtma qilingan pozitsiyalar",
+        "totalAmount": "Umumiy summa",
+        "table": {
+          "client": "Mijoz",
+          "phone": "Telefon",
+          "date": "Sana",
+          "items": "Pozitsiyalar",
+          "amount": "Summa"
+        }
+      },
+      "empty": "Ma'lumotlar yo'q"
+    },
+    "supply": {
+      "title": "Materiallar ta'minoti",
+      "buttons": {
+        "new": "+ Yangi ta'minot",
+        "submit": "Ta'minotni qabul qilish"
+      },
+      "form": {
+        "title": "Ta'minotni qabul qilish",
+        "material": "Material",
+        "selectMaterial": "— Materialni tanlang —",
+        "stock": "(qoldiq: {{quantity}} {{unit}})",
+        "quantity": "Miqdori",
+        "quantityPlaceholder": "Miqdorni kiriting",
+        "comment": "Izoh (yetkazib beruvchi, yukxat)",
+        "commentPlaceholder": "Yetkazib beruvchi Ahmadov, yukxat №123"
+      },
+      "table": {
+        "date": "Sana",
+        "material": "Material",
+        "quantity": "Miqdori",
+        "comment": "Izoh"
+      },
+      "empty": "Hozircha ta'minotlar yo'q"
+    }
+  }
+}

@@ -1,13 +1,5 @@
 import { useAuth } from '../../context/AuthContext';
-
-const SPEC_LABELS = {
-  frame:      'Каркасник',
-  springs:    'Пружинщик / Механик',
-  sewing:     'Швея',
-  foam:       'Поролонщик',
-  upholstery: 'Обивщик',
-  none:       'Без специализации',
-};
+import { useTranslation } from 'react-i18next';   // ← Добавлено
 
 const SPEC_COLORS = {
   frame:      '#3b82f6',
@@ -20,6 +12,7 @@ const SPEC_COLORS = {
 
 export default function WorkerHome() {
   const { user } = useAuth();
+  const { t } = useTranslation();                  // ← Добавлено
   const spec = user?.specialization || 'none';
 
   return (
@@ -34,16 +27,16 @@ export default function WorkerHome() {
           background: SPEC_COLORS[spec] + '20',
           color: SPEC_COLORS[spec],
         }}>
-          {SPEC_LABELS[spec]}
+          {t(`specializations.${spec}`)}               {/* ← Перевод специализации */}
         </span>
         <div style={s.info}>
           <div style={s.infoRow}>
-            <span style={s.infoLabel}>Роль:</span>
-            <span>Работник цеха</span>
+            <span style={s.infoLabel}>{t('worker.home.roleLabel')}</span>
+            <span>{t('worker.home.roleValue')}</span>   {/* «Работник цеха» */}
           </div>
           <div style={s.infoRow}>
-            <span style={s.infoLabel}>Специализация:</span>
-            <span>{SPEC_LABELS[spec]}</span>
+            <span style={s.infoLabel}>{t('worker.home.specializationLabel')}</span>
+            <span>{t(`specializations.${spec}`)}</span>
           </div>
         </div>
       </div>

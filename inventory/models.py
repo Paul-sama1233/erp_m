@@ -1,19 +1,18 @@
 from django.db import models
 from core.models import Person
 
-
 class Material(models.Model):
     SPECIALIZATION_CHOICES = [
-        ('frame',      'Каркасник'),
-        ('sewing',     'Швея'),
-        ('foam',       'Поролонщик'),
+        ('frame', 'Каркасник'),
+        ('sewing', 'Швея'),
+        ('foam', 'Поролонщик'),
         ('upholstery', 'Обивщик'),
-        ('any',        'Общий (для всех)'),
+        ('any', 'Общий (для всех)'),
     ]
     name = models.CharField(max_length=255, verbose_name="Название")
     unit = models.CharField(max_length=50, verbose_name="Единица измерения")
-    quantity       = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    min_quantity   = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    quantity = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    min_quantity = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     price_per_unit = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     specialization = models.CharField(
         max_length=20,
@@ -31,23 +30,15 @@ class Material(models.Model):
 
 
 class MaterialTransaction(models.Model):
-    """material_transactions"""
     TRANSACTION_TYPES = [
         ('in', 'Поступление'),
         ('out', 'Списание'),
     ]
-    material = models.ForeignKey(
-        Material, on_delete=models.PROTECT, verbose_name="Материал"
-    )
+    material = models.ForeignKey(Material, on_delete=models.PROTECT, verbose_name="Материал")
     quantity = models.DecimalField(max_digits=12, decimal_places=2)
-    transaction_type = models.CharField(
-        max_length=50, choices=TRANSACTION_TYPES, verbose_name="Тип"
-    )
+    transaction_type = models.CharField(max_length=50, choices=TRANSACTION_TYPES, verbose_name="Тип")
     comment = models.TextField(blank=True, verbose_name="Комментарий")
-    person = models.ForeignKey(
-        Person, on_delete=models.SET_NULL, null=True, blank=True,
-        verbose_name="Сотрудник"
-    )
+    person = models.ForeignKey(Person, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Сотрудник")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -59,11 +50,8 @@ class MaterialTransaction(models.Model):
 
 
 class Product(models.Model):
-    """products"""
     name = models.CharField(max_length=255, verbose_name="Название изделия")
-    price = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name="Цена продажи"
-    )
+    price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Цена продажи")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -74,43 +62,59 @@ class Product(models.Model):
         return self.name
 
 
-class ProductMaterial(models.Model):
-    """product_materials — сколько материала на 1 изделие"""
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, related_name='materials'
-    )
-    material = models.ForeignKey(
-        Material, on_delete=models.PROTECT
-    )
-    quantity = models.DecimalField(
-        max_digits=12, decimal_places=2,
-        verbose_name="Количество на 1 изделие"
-    )
+# --- НОВАЯ МОДЕЛЬ: Шаблон этапа (Технологическая карта) ---
+class ProductStageTemplate(models.Model):
+    STAGE_CHOICES = [
+        ('frame', 'Каркас'),
+        ('springs', 'Пружины / Механизмы'),
+        ('sewing', 'Шитьё'),
+        ('foam', 'Поролон'),
+        ('upholstery', 'Обивка'),
+    ]
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='stage_templates')
+    stage_type = models.CharField(max_length=20, choices=STAGE_CHOICES, verbose_name="Тип этапа")
+    order = models.PositiveIntegerField(default=0, verbose_name="Порядок выполнения")
 
     class Meta:
-        unique_together = ('product', 'material')
+        verbose_name = "Шаблон этапа изделия"
+        verbose_name_plural = "Шаблоны этапов изделия"
+        ordering = ['order']
+        unique_together = ('product', 'stage_type')
+
+    def __str__(self):
+        return f"{self.product.name} — {self.get_stage_type_display()}"
+
+
+class ProductMaterial(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='materials')
+
+    # ПРИВЯЗКА К ЭТАПУ: На каком этапе расходуется материал
+    stage_template = models.ForeignKey(
+        ProductStageTemplate, on_delete=models.CASCADE, related_name='stage_materials',
+        null=True, blank=True, verbose_name="Шаблон этапа"
+    )
+    material = models.ForeignKey(Material, on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Количество на 1 изделие")
+
+    class Meta:
+        # Убрали unique_together, так как один материал (например, клей) может быть на разных этапах
         verbose_name = "Материал изделия"
         verbose_name_plural = "Материалы изделий"
 
     def __str__(self):
-        return f"{self.product.name} → {self.material.name} × {self.quantity}"
+        stage = self.stage_template.get_stage_type_display() if self.stage_template else "Общий"
+        return f"{self.product.name} ({stage}) → {self.material.name} × {self.quantity}"
+
 
 class PurchaseRequest(models.Model):
     STATUS_CHOICES = [
-        ('pending',   'В ожидании'),
-        ('approved',  'Одобрено'),
+        ('pending', 'В ожидании'),
+        ('approved', 'Одобрено'),
         ('purchased', 'Закуплено'),
     ]
-    material = models.ForeignKey(
-        Material, on_delete=models.PROTECT, verbose_name="Материал"
-    )
-    requested_quantity = models.DecimalField(
-        max_digits=12, decimal_places=2, verbose_name="Запрашиваемое количество"
-    )
-    status = models.CharField(
-        max_length=10, choices=STATUS_CHOICES,
-        default='pending', verbose_name="Статус"
-    )
+    material = models.ForeignKey(Material, on_delete=models.PROTECT, verbose_name="Материал")
+    requested_quantity = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Запрашиваемое количество")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending', verbose_name="Статус")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
