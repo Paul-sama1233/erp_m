@@ -1,5 +1,8 @@
+import requests
 from django.db import transaction
 from decimal import Decimal, InvalidOperation
+from django.db.models import Sum, Count
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
@@ -10,10 +13,14 @@ from rest_framework.decorators import action
 from rest_framework import status
 from django.db import models as django_models
 from django.db.models import F
+from datetime import timedelta
 from django.db.models import ProtectedError
 from inventory.models import Material, MaterialTransaction, Product, ProductMaterial, PurchaseRequest, ProductStageTemplate
 from contracts.models import Contract, ContractProduct
 from .serializers import ProductStageTemplateSerializer
+from django.utils import timezone
+from reports.models import WorkerSalary
+from datetime import datetime
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer,
     MaterialSerializer,              MaterialTransactionSerializer,
@@ -97,29 +104,32 @@ class ProductionViewSet(viewsets.ModelViewSet):
     # --- НОВЫЙ МЕТОД: АВТОГЕНЕРАЦИЯ ЭТАПОВ ПРИ РУЧНОМ СОЗДАНИИ ---
     def perform_create(self, serializer):
         with transaction.atomic():
-            # Сохраняем производство, сразу ставим статус 'started'
+            start_date = timezone.now()
             production = serializer.save(status='started', current_stage_order=0)
 
-            # Берем технологическую карту (шаблоны этапов) из изделия
-            templates = production.product.stage_templates.all()
+            templates = production.product.stage_templates.all().order_by('order')
 
             if templates.exists():
-                for template in templates:
+                for i, template in enumerate(templates, start=1):
+                    # Прибавляем по 7 дней на каждый следующий этап
+                    deadline_date = start_date + timedelta(days=i * 7)
+
                     ProductionStage.objects.create(
                         production=production,
                         stage_type=template.stage_type,
-                        assigned_worker=None,  # Ждет назначения от админа
+                        assigned_worker=None,
                         order=template.order,
-                        status='pending'
+                        status='pending',
+                        deadline=deadline_date  # <--- Сохраняем дату
                     )
             else:
-                # Резервная логика: если техкарта пустая, создаем базовый этап
                 ProductionStage.objects.create(
                     production=production,
                     stage_type='frame',
                     assigned_worker=None,
                     order=0,
-                    status='pending'
+                    status='pending',
+                    deadline=start_date + timedelta(days=7)
                 )
 
     @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
@@ -135,34 +145,66 @@ class ProductionViewSet(viewsets.ModelViewSet):
             production.status = 'completed'
             production.save()
 
-            # --- СИНХРОНИЗАЦИЯ С ДОГОВОРОМ ---
+            # --- 1. БРОНЕБОЙНАЯ СИНХРОНИЗАЦИЯ С ДОГОВОРОМ ---
+            price = Decimal(str(production.product.price))
             if production.contract:
-                try:
-                    contract_item = ContractProduct.objects.get(
-                        contract=production.contract,
-                        product=production.product
-                    )
+                contract_items = ContractProduct.objects.filter(
+                    contract=production.contract,
+                    product=production.product
+                ).order_by('id')
 
-                    # Считаем, сколько таких изделий уже полностью готово
+                if contract_items.exists():
+                    price = Decimal(str(contract_items.first().price))
+
                     completed_count = Production.objects.filter(
                         contract=production.contract,
                         product=production.product,
                         status='completed'
                     ).count()
 
-                    # Если готово столько же, сколько заказано (или больше)
-                    if completed_count >= contract_item.quantity:
-                        contract_item.status = 'completed'
-                        contract_item.save()
+                    allocated = completed_count
+                    for item in contract_items:
+                        if allocated >= item.quantity:
+                            if item.status != 'completed':
+                                item.status = 'completed'
+                                item.save()
+                            allocated -= item.quantity
+                        else:
+                            break
 
-                except ContractProduct.DoesNotExist:
-                    pass
+            # --- 2. БРОНЕБОЙНЫЙ РАСЧЕТ ЗАРПЛАТ ---
+            if price > Decimal('0'):
+                salary_pool = price * Decimal('0.45')
+
+                # Добавил springs на всякий случай, чтобы не было деления на 0
+                coefs = {
+                    'frame': Decimal('1.0'),
+                    'springs': Decimal('1.0'),
+                    'foam': Decimal('1.0'),
+                    'sewing': Decimal('2.0'),
+                    'upholstery': Decimal('0.4'),
+                }
+
+                # Берем только те этапы, где реально назначен человек
+                finished_stages = production.stages.filter(assigned_worker__isnull=False)
+                total_coef = sum(coefs.get(s.stage_type, Decimal('0')) for s in finished_stages)
+
+                if total_coef > Decimal('0'):
+                    base_unit = salary_pool / total_coef
+                    for s in finished_stages:
+                        amount = base_unit * coefs.get(s.stage_type, Decimal('0'))
+                        if amount > Decimal('0'):
+                            # get_or_create защитит от двойного начисления
+                            WorkerSalary.objects.get_or_create(
+                                worker=s.assigned_worker,
+                                production=production,
+                                defaults={'amount': amount}
+                            )
 
         return Response({
             'success': True,
-            'message': 'Производство успешно закрыто. Статусы договора обновлены.'
+            'message': 'Производство успешно закрыто. Зарплаты начислены.'
         })
-
     def destroy(self, request, *args, **kwargs):
         production = self.get_object()
 
@@ -196,6 +238,68 @@ class ContractViewSet(viewsets.ModelViewSet):
     serializer_class = ContractSerializer
     permission_classes = [IsAdmin]
 
+    # Встраиваем проверку адреса напрямую в ContractViewSet, чтобы роутер не путался
+    @action(detail=False, methods=['get'], url_path='validate-address')
+    def validate_address(self, request):
+        query = request.query_params.get('q', '').strip()
+        if not query:
+            return Response({"error": "Параметр q (адрес) обязателен"}, status=status.HTTP_400_BAD_REQUEST)
+
+        api_key = getattr(settings, 'LOCATIONIQ_API_KEY', None)
+        if not api_key or api_key == 'pk.твой_ключ_сюда':
+            return Response({"error": "LocationIQ API ключ не настроен"}, status=500)
+
+        url = "https://us1.locationiq.com/v1/search.php"
+        params = {
+            'key': api_key,
+            'q': query,
+            'format': 'json',
+            'limit': 5,
+            'addressdetails': 1,
+            'accept-language': 'ru'
+        }
+
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+
+            if not data or len(data) == 0:
+                return Response({
+                    "valid": False,
+                    "message": "Адрес не найден"
+                })
+
+            best = data[0]
+
+            result = {
+                "valid": True,
+                "message": "Адрес успешно найден",
+                "formatted_address": best.get('display_name'),
+                "coordinates": {
+                    "lat": best.get('lat'),
+                    "lon": best.get('lon')
+                },
+                "address": {
+                    "house_number": best.get('address', {}).get('house_number'),
+                    "road": best.get('address', {}).get('road'),
+                    "city": best.get('address', {}).get('city'),
+                    "state": best.get('address', {}).get('state'),
+                }
+            }
+
+            return Response(result)
+
+        except requests.exceptions.RequestException:
+            return Response({
+                "valid": False,
+                "message": "Ошибка соединения с LocationIQ"
+            }, status=502)
+        except Exception as e:
+            return Response({
+                "valid": False,
+                "message": f"Неизвестная ошибка: {str(e)}"
+            }, status=500)
 
 class ContractProductViewSet(viewsets.ModelViewSet):
     queryset = ContractProduct.objects.all()
@@ -211,7 +315,8 @@ class ContractProductViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Эта позиция уже завершена.'}, status=400)
 
         with transaction.atomic():
-            # Считаем, сколько производств УЖЕ запущено по этому заказу
+            start_date = timezone.now()
+
             already_started = Production.objects.filter(
                 contract=contract_item.contract,
                 product=contract_item.product
@@ -234,15 +339,18 @@ class ContractProductViewSet(viewsets.ModelViewSet):
             )
 
             # Генерируем этапы
-            templates = contract_item.product.stage_templates.all()
+            templates = contract_item.product.stage_templates.all().order_by('order')
             if templates.exists():
-                for template in templates:
+                for i, template in enumerate(templates, start=1):
+                    deadline_date = start_date + timedelta(days=i * 7)
+
                     ProductionStage.objects.create(
                         production=production,
                         stage_type=template.stage_type,
                         assigned_worker=None,
                         order=template.order,
-                        status='pending'
+                        status='pending',
+                        deadline=deadline_date
                     )
             else:
                 ProductionStage.objects.create(
@@ -250,7 +358,8 @@ class ContractProductViewSet(viewsets.ModelViewSet):
                     stage_type='frame',
                     assigned_worker=None,
                     order=0,
-                    status='pending'
+                    status='pending',
+                    deadline=start_date + timedelta(days=7)
                 )
 
             # Обновляем статус заказа в договоре, чтобы было понятно, что работа пошла
@@ -337,6 +446,7 @@ class DashboardStatsView(APIView):
         active_productions  = Production.objects.filter(status__in=['pending', 'started']).count()
         total_contracts     = Contract.objects.count()
         total_persons       = Person.objects.count()
+        total_completed_stages = ProductionStage.objects.filter(status='completed').count()
         pending_requests    = PurchaseRequest.objects.filter(status='pending').count()
 
         # Последние производства
@@ -365,6 +475,7 @@ class DashboardStatsView(APIView):
             'pending_requests':    pending_requests,
             'recent_productions':  recent_data,
             'low_stock':           list(low_stock),
+            "total_completed_stages": total_completed_stages,
         })
 
 # начать и завершить этап
@@ -478,27 +589,61 @@ class StageActionView(APIView):
 
                 if all_completed:
                     production.status = 'completed'
-                    production.save()  # Сохраняем сразу, чтобы посчитать в выборке ниже
+                    production.save()
 
-                    # --- СИНХРОНИЗАЦИЯ С ДОГОВОРОМ ---
+                    # --- 1. БРОНЕБОЙНАЯ СИНХРОНИЗАЦИЯ С ДОГОВОРОМ ---
+                    price = Decimal(str(production.product.price))
                     if production.contract:
-                        try:
-                            contract_item = ContractProduct.objects.get(
-                                contract=production.contract,
-                                product=production.product
-                            )
+                        contract_items = ContractProduct.objects.filter(
+                            contract=production.contract,
+                            product=production.product
+                        ).order_by('id')
+
+                        if contract_items.exists():
+                            price = Decimal(str(contract_items.first().price))
+
                             completed_count = Production.objects.filter(
                                 contract=production.contract,
                                 product=production.product,
                                 status='completed'
                             ).count()
 
-                            if completed_count >= contract_item.quantity:
-                                contract_item.status = 'completed'
-                                contract_item.save()
+                            allocated = completed_count
+                            for item in contract_items:
+                                if allocated >= item.quantity:
+                                    if item.status != 'completed':
+                                        item.status = 'completed'
+                                        item.save()
+                                    allocated -= item.quantity
+                                else:
+                                    break
 
-                        except ContractProduct.DoesNotExist:
-                            pass
+                    # --- 2. БРОНЕБОЙНЫЙ РАСЧЕТ ЗАРПЛАТ ---
+                    if price > Decimal('0'):
+                        salary_pool = price * Decimal('0.45')
+
+                        coefs = {
+                            'frame': Decimal('1.0'),
+                            'springs': Decimal('1.0'),
+                            'foam': Decimal('1.0'),
+                            'sewing': Decimal('2.0'),
+                            'upholstery': Decimal('0.4'),
+                        }
+
+                        finished_stages = production.stages.filter(assigned_worker__isnull=False)
+                        total_coef = sum(coefs.get(s.stage_type, Decimal('0')) for s in finished_stages)
+
+                        if total_coef > Decimal('0'):
+                            base_unit = salary_pool / total_coef
+
+                            for s in finished_stages:
+                                amount = base_unit * coefs.get(s.stage_type, Decimal('0'))
+                                if amount > Decimal('0'):
+                                    WorkerSalary.objects.get_or_create(
+                                        worker=s.assigned_worker,
+                                        production=production,
+                                        defaults={'amount': amount}
+                                    )
 
                 else:
                     # Переходим к следующему этапу
@@ -510,8 +655,7 @@ class StageActionView(APIView):
 
                     if next_stage:
                         production.current_stage_order = next_stage.order
-
-                production.save()
+                        production.save()
 
             return Response({'success': True, 'message': 'Этап завершён'})
 
@@ -521,3 +665,48 @@ class ProductStageTemplateViewSet(viewsets.ModelViewSet):
     queryset = ProductStageTemplate.objects.all().order_by('order')
     serializer_class = ProductStageTemplateSerializer
     permission_classes = [IsAdmin]
+
+
+class WorkerStatsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Определяем начало текущего месяца
+        now = timezone.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Находим объект сотрудника
+        full_name = f"{request.user.first_name} {request.user.last_name}".strip()
+        try:
+            person = Person.objects.get(full_name=full_name)
+        except Person.DoesNotExist:
+            return Response({"completed_this_month": 0})
+
+        # Считаем только те этапы, которые завершены В ЭТОМ МЕСЯЦЕ
+        completed_count = ProductionStage.objects.filter(
+            assigned_worker=person,
+            status='completed',
+            completed_at__gte=start_of_month
+        ).count()
+
+        return Response({
+            "completed_this_month": completed_count,
+            "month_name": now.strftime('%B')  # Передаем название месяца для красоты
+        })
+
+
+class SalaryReportView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        from reports.models import WorkerSalary
+
+        # Группируем по сотруднику и суммируем заработок
+        stats = WorkerSalary.objects.values(
+            'worker__id', 'worker__full_name', 'worker__specialization'
+        ).annotate(
+            total_earned=Sum('amount'),
+            completed_products=Count('production', distinct=True)
+        ).order_by('-total_earned')
+
+        return Response(list(stats))

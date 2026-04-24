@@ -50,7 +50,7 @@ export default function Products() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm(t('admin.products.confirm.delete'))) return;
+    if (!window.confirm(t('admin.products.confirm.delete'))) return;
     try {
       await axios.delete(`${API}/api/products/${id}/`, { headers });
       fetchAll();
@@ -76,7 +76,7 @@ export default function Products() {
   };
 
   const handleRemoveStage = async (stageId) => {
-    if (!confirm("Удалить этап? Привязанные к нему материалы останутся без этапа.")) return;
+    if (!window.confirm("Удалить этап? Привязанные к нему материалы останутся без этапа.")) return;
     await axios.delete(`${API}/api/product-stage-templates/${stageId}/`, { headers });
     fetchAll();
   };
@@ -158,7 +158,7 @@ export default function Products() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button style={s.expandBtn} onClick={() => setExpanded(expanded === p.id ? null : p.id)}>
-                  {expanded === p.id ? t('common.hide') : `▼ Настройки (${p.stage_templates?.length || 0} этапов, ${p.materials.length} мат.)`}
+                  {expanded === p.id ? t('common.hide') : `${t('admin.products.buttons.showMaterials')} (${p.stage_templates?.length || 0}, ${p.materials.length})`}
                 </button>
                 <button style={s.editBtn} onClick={() => { setForm({ name: p.name, price: p.price }); setEditingId(p.id); setShowForm(true); }}>
                   {t('common.edit')}
@@ -173,18 +173,18 @@ export default function Products() {
 
                 {/* 1. БЛОК ЭТАПОВ (ТЕХКАРТА) */}
                 <div style={s.innerSection}>
-                  <h4 style={s.sectionTitle}>🛠 Этапы сборки (Техкарта)</h4>
+                  <h4 style={s.sectionTitle}>{t('admin.products.stagesTitle')}</h4>
                   <table style={s.table}>
                     <thead>
                       <tr>
-                        <th style={s.th}>Порядок</th>
-                        <th style={s.th}>Этап</th>
-                        <th style={s.th}>Действия</th>
+                        <th style={s.th}>{t('admin.products.order')}</th>
+                        <th style={s.th}>{t('admin.products.table.stage')}</th>
+                        <th style={s.th}>{t('admin.products.table.actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {p.stage_templates?.length === 0 && (
-                        <tr><td colSpan={3} style={s.tdEmpty}>Этапы не настроены (по умолчанию создастся Каркас)</td></tr>
+                        <tr><td colSpan={3} style={s.tdEmpty}>{t('admin.products.stageEmpty')}</td></tr>
                       )}
                       {p.stage_templates?.map(st => (
                         <tr key={st.id} style={s.tr}>
@@ -198,29 +198,46 @@ export default function Products() {
                     </tbody>
                   </table>
 
-                  {/* Добавить этап */}
+                  {/* Добавить этап с автоматическим порядком */}
                   <form onSubmit={(e) => handleAddStage(e, p.id)} style={s.inlineForm}>
-                    <select style={s.select} required value={stageForm.stage_type} onChange={e => setStageForm({ ...stageForm, stage_type: e.target.value })}>
-                      <option value="">— Выберите этап —</option>
-                      <option value="frame">{t('stages.frame')}</option>
-                      <option value="springs">{t('stages.springs')}</option>
-                      <option value="sewing">{t('stages.sewing')}</option>
-                      <option value="foam">{t('stages.foam')}</option>
-                      <option value="upholstery">{t('stages.upholstery')}</option>
+                    <select
+                      style={s.select}
+                      required
+                      value={stageForm.stage_type}
+                      onChange={e => {
+                        const type = e.target.value;
+                        // Суровая последовательность этапов:
+                        const orders = { frame: 1, foam: 2, sewing: 3, upholstery: 4 };
+                        setStageForm({ ...stageForm, stage_type: type, order: orders[type] || 0 });
+                      }}
+                    >
+                      <option value="">{t('admin.products.selectStage')}</option>
+                      <option value="frame">1. {t('stages.frame')}</option>
+                      <option value="foam">2. {t('stages.foam')}</option>
+                      <option value="sewing">3. {t('stages.sewing')}</option>
+                      <option value="upholstery">4. {t('stages.upholstery')}</option>
                     </select>
-                    <input style={{ ...s.input, width: 100 }} type="number" min="0" placeholder="Порядок" required
-                      value={stageForm.order} onChange={e => setStageForm({ ...stageForm, order: e.target.value })} />
-                    <button style={s.btn} type="submit">+ Добавить этап</button>
+
+                    <input
+                      style={{ ...s.input, width: 100, background: '#f0f0f0', cursor: 'not-allowed' }}
+                      type="number"
+                      placeholder={t('admin.products.order')}
+                      required
+                      readOnly // Заблокировано для ручного ввода
+                      value={stageForm.order}
+                    />
+
+                    <button style={s.btn} type="submit">{t('admin.products.addStage')}</button>
                   </form>
                 </div>
 
                 {/* 2. БЛОК МАТЕРИАЛОВ (РЕСУРСЫ) */}
                 <div style={s.innerSection}>
-                  <h4 style={s.sectionTitle}>📦 Материалы изделия</h4>
+                  <h4 style={s.sectionTitle}>{t('admin.products.materialsTitle')}</h4>
                   <table style={s.table}>
                     <thead>
                       <tr>
-                        <th style={s.th}>Этап использования</th>
+                        <th style={s.th}>{t('admin.products.stageUse')}</th>
                         <th style={s.th}>{t('admin.products.table.material')}</th>
                         <th style={s.th}>{t('admin.products.table.quantity')}</th>
                         <th style={s.th}>{t('admin.products.table.actions')}</th>
@@ -233,7 +250,7 @@ export default function Products() {
                       {p.materials.map(pm => (
                         <tr key={pm.id} style={s.tr}>
                           <td style={s.td}>
-                            <span style={s.stageBadge}>{pm.stage_name || 'Общий (Без этапа)'}</span>
+                            <span style={s.stageBadge}>{pm.stage_name || t('specializations.any')}</span>
                           </td>
                           <td style={s.td}>{pm.material_name}</td>
                           <td style={s.td}>{pm.quantity} {pm.material_unit}</td>
@@ -257,7 +274,7 @@ export default function Products() {
                     </select>
 
                     <select style={s.select} value={pmForm.stage_template} onChange={e => setPmForm({ ...pmForm, stage_template: e.target.value })}>
-                      <option value="">— Для какого этапа? —</option>
+                      <option value="">{t('admin.products.forWhichStage')}</option>
                       {p.stage_templates?.map(st => (
                         <option key={st.id} value={st.id}>{st.stage_name}</option>
                       ))}
@@ -265,7 +282,7 @@ export default function Products() {
 
                     <input style={{ ...s.input, width: 120 }} type="number" step="0.01" min="0.01" placeholder={t('common.quantity')} required
                       value={pmForm.quantity} onChange={e => setPmForm({ ...pmForm, quantity: e.target.value })} />
-                    <button style={s.btn} type="submit">+ Привязать материал</button>
+                    <button style={s.btn} type="submit">{t('admin.products.bindMaterial')}</button>
                   </form>
                 </div>
 

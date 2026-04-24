@@ -1,6 +1,7 @@
 from django.db import models
 from core.models import Production
 from inventory.models import Product
+from core.models import Person, Production
 
 
 class Profit(models.Model):
@@ -46,3 +47,16 @@ class Profit(models.Model):
 
     def __str__(self):
         return f"{self.product} — {self.profit_value}"
+
+class WorkerSalary(models.Model):
+    worker = models.ForeignKey(Person, on_delete=models.CASCADE, verbose_name="Сотрудник")
+    production = models.ForeignKey(Production, on_delete=models.CASCADE, verbose_name="Производство")
+    amount = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Сумма начисления")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Зарплата сотрудника"
+        verbose_name_plural = "Зарплаты сотрудников"
+
+    def __str__(self):
+        return f"{self.worker.full_name} -> {self.amount}"

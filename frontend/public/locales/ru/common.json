@@ -17,13 +17,11 @@
     },
     "currency": "сум"
   },
-
   "status": {
     "pending": "Ожидает",
     "in_progress": "В работе",
     "completed": "Завершено"
   },
-
   "stages": {
     "frame": "Каркас",
     "springs": "Пружины / Механизмы",
@@ -31,16 +29,15 @@
     "foam": "Поролон",
     "upholstery": "Обивка"
   },
-
   "specializations": {
     "frame": "Каркасник",
     "springs": "Пружинщик / Механик",
     "sewing": "Швея",
     "foam": "Поролонщик",
     "upholstery": "Обивщик",
-    "none": "Без специализации"
+    "none": "Без специализации",
+    "any": "Общий (для всех)"
   },
-
   "dashboard": {
     "title": "Обзор цеха",
     "materials_total": "Материалов на складе",
@@ -48,7 +45,20 @@
     "products": "Изделий",
     "productions": "Производств"
   },
-
+  "months": {
+    "January": "Январь",
+    "February": "Февраль",
+    "March": "Март",
+    "April": "Апрель",
+    "May": "Май",
+    "June": "Июнь",
+    "July": "Июль",
+    "August": "Август",
+    "September": "Сентябрь",
+    "October": "Октябрь",
+    "November": "Ноябрь",
+    "December": "Декабрь"
+  },
   "worker": {
     "layout": {
       "role": "Работник цеха",
@@ -72,7 +82,9 @@
       "stats": {
         "pending": "Ожидают",
         "inProgress": "В работе",
-        "completed": "Завершено"
+        "completed": "Завершено",
+        "completed_month": "Выполнено в этом месяце",
+        "total_admin": "Всего выполнено за всё время"
       },
       "section": {
         "pending": "⏳ Ожидают начала",
@@ -127,7 +139,6 @@
       "noTasks": "Нет запланированных задач"
     }
   },
-
   "admin": {
     "layout": {
       "role": "Администратор",
@@ -224,6 +235,9 @@
         "minQuantity": "Мин. остаток",
         "specialization": "Специализация (кому принадлежит)"
       },
+      "specialization": {
+        "any": "Общий (для всех)"
+      },
       "table": {
         "name": "Название",
         "unit": "Единица",
@@ -295,6 +309,15 @@
     },
     "products": {
       "title": "Изделия",
+      "stagesTitle": "🛠 Этапы сборки (Техкарта)",
+      "materialsTitle": "📦 Материалы изделия",
+      "stageEmpty": "Этапы не настроены (по умолчанию создастся Каркас)",
+      "selectStage": "— Выберите этап —",
+      "addStage": "+ Добавить этап",
+      "order": "Порядок",
+      "stageUse": "Этап использования",
+      "forWhichStage": "— Для какого этапа? —",
+      "bindMaterial": "+ Привязать материал",
       "buttons": {
         "add": "+ Добавить изделие",
         "create": "Создать изделие",
@@ -328,7 +351,17 @@
       "tabs": {
         "materials": "📦 Движение материалов",
         "profit": "💰 Прибыль по изделиям",
-        "contracts": "📋 Статистика договоров"
+        "contracts": "📋 Статистика договоров",
+        "salaries": "💳 Заработные платы"
+      },
+      "salaries": {
+        "totalFund": "Общий выплаченный ФОТ",
+        "table": {
+          "worker": "Сотрудник",
+          "specialization": "Специализация",
+          "completedProducts": "Изделий завершено",
+          "totalEarned": "Всего заработано"
+        }
       },
       "materials": {
         "writeOffs": "Списаний",
@@ -346,12 +379,16 @@
       },
       "profit": {
         "productsProduced": "Изделий произведено",
-        "totalRevenue": "Общая выручка",
+        "totalRevenue": "Общая выручка (100%)",
+        "netProfit": "Чистая прибыль (10%)",
         "table": {
           "product": "Изделие",
           "price": "Цена продажи",
-          "count": "Кол-во производств",
-          "revenue": "Выручка"
+          "count": "Кол-во",
+          "revenue": "Выручка (100%)",
+          "labor": "ФОТ (45%)",
+          "expenses": "Расходы (45%)",
+          "netProfit": "Прибыль (10%)"
         }
       },
       "contracts": {

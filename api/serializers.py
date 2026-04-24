@@ -85,7 +85,7 @@ class ProductionStageSerializer(serializers.ModelSerializer):
         fields = [
             'id','production', 'stage_type', 'assigned_worker',
             'assigned_worker_name', 'order', 'status', 'started_at',
-            'completed_at'
+            'completed_at', 'deadline'
         ]
 
 class ProductionSerializer(serializers.ModelSerializer):
@@ -239,5 +239,5 @@ class WorkerStageSerializer(serializers.ModelSerializer):
             'id', 'production', 'stage_type', 'assigned_worker',
             'assigned_worker_name', 'product_name', 'production_date',
             'production_status', 'status', 'started_at', 'completed_at',
-            'order', 'available_materials'
+            'order', 'available_materials', 'deadline'
         ]

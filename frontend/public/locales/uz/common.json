@@ -13,19 +13,15 @@
     "quantity": "Soni",
     "price": "Narxi",
     "units": {
-      "pcs": "dona."
+      "pcs": "dona"
     },
     "currency": "so'm"
   },
-
-  "dashboard": {
-    "title": "Tsex sharhi",
-    "materials_total": "Ombordagi materiallar",
-    "low_stock": "Omborda kam qolgan",
-    "products": "Mahsulotlar",
-    "productions": "Ishlab chiqarishlar"
+  "status": {
+    "pending": "Kutilmoqda",
+    "in_progress": "Jarayonda",
+    "completed": "Tugallandi"
   },
-
   "stages": {
     "frame": "Karkas",
     "springs": "Prujinalar / Mexanizmlar",
@@ -33,25 +29,39 @@
     "foam": "Porolon",
     "upholstery": "Qoplama"
   },
-
-  "status": {
-    "pending": "Kutilmoqda",
-    "in_progress": "Jarayonda",
-    "completed": "Tugallandi"
-  },
-
   "specializations": {
     "frame": "Karkaschi",
     "springs": "Prujinachi / Mexanik",
     "sewing": "Tikuvchi",
     "foam": "Porolonchi",
     "upholstery": "Qoplamachi",
-    "none": "Mutaxassisliksiz"
+    "none": "Ixtisoslashuvsiz",
+    "any": "Umumiy (hamma uchun)"
   },
-
+  "dashboard": {
+    "title": "Tsex sharhi",
+    "materials_total": "Ombordagi materiallar",
+    "low_stock": "Omborda kam",
+    "products": "Mahsulotlar",
+    "productions": "Ishlab chiqarishlar"
+  },
+  "months": {
+    "January": "Yanvar",
+    "February": "Fevral",
+    "March": "Mart",
+    "April": "Aprel",
+    "May": "May",
+    "June": "Iyun",
+    "July": "Iyul",
+    "August": "Avgust",
+    "September": "Sentabr",
+    "October": "Oktyabr",
+    "November": "Noyabr",
+    "December": "Dekabr"
+  },
   "worker": {
     "layout": {
-      "role": "Tsex ishchisi",
+      "role": "Tsex xodimi",
       "menu": {
         "dashboard": "Asosiy",
         "tasks": "Mahsulotlar",
@@ -61,43 +71,50 @@
         "logout": "Chiqish"
       }
     },
+    "home": {
+      "roleLabel": "Rol:",
+      "roleValue": "Tsex xodimi",
+      "specializationLabel": "Ixtisoslashuv:"
+    },
     "dashboard": {
       "greeting": "Xush kelibsiz, {{name}}!",
       "subtitle": "Ishlab chiqarishdagi vazifalaringiz",
       "stats": {
         "pending": "Kutilmoqda",
         "inProgress": "Jarayonda",
-        "completed": "Tugallandi"
+        "completed": "Tugallandi",
+        "completed_month": "Shu oyda bajarildi",
+        "total_admin": "Jami bajarilgan"
       },
       "section": {
+        "pending": "⏳ Boshlanishini kutmoqda",
         "inProgress": "🔨 Hozir jarayonda",
-        "pending": "⏳ Boshlanishi kutilmoqda",
-        "completed": "✅ Tugallanganlar"
+        "completed": "✅ Tugallangan"
       },
       "modal": {
         "title": "Tugatish: {{stage}}",
-        "description": "Hisobdan chiqariladigan materiallar miqdorini kiriting",
+        "description": "Hisobdan chiqariladigan materiallar sonini kiriting",
         "noMaterials": "Hisobdan chiqarish uchun materiallar yo'q",
         "stock": "Omborda:",
         "norm": "Me'yor:"
       },
       "empty": {
-        "noTasks": "Biriktirilgan vazifalar yo'q"
+        "noTasks": "Belgilangan vazifalar yo'q"
       },
       "buttons": {
         "start": "▶ Bosqichni boshlash",
+        "starting": "Boshlanmoqda...",
         "complete": "✅ Bosqichni tugatish",
+        "completing": "Tugatilyapti...",
         "cancel": "Bekor qilish",
-        "logout": "Chiqish",
-        "starting": "Ishga tushirilmoqda...",
-        "completing": "Tugallanmoqda..."
+        "logout": "Chiqish"
       }
     },
     "tasks": {
       "title": "Mening mahsulotlarim",
       "section": {
         "active": "Faol vazifalar",
-        "completed": "Tugallanganlar"
+        "completed": "Tugallangan"
       },
       "modal": {
         "title": "Tugatish: {{stage}}",
@@ -107,27 +124,21 @@
         "norm": "Me'yor:"
       },
       "empty": {
-        "noTasks": "Biriktirilgan vazifalar yo'q"
+        "noTasks": "Belgilangan vazifalar yo'q"
       },
       "buttons": {
         "start": "▶ Bosqichni boshlash",
+        "starting": "Boshlanmoqda...",
         "complete": "✅ Bosqichni tugatish",
-        "cancel": "Bekor qilish",
-        "starting": "Ishga tushirilmoqda...",
-        "completing": "Tugallanmoqda..."
+        "completing": "Tugatilyapti...",
+        "cancel": "Bekor qilish"
       }
     },
     "calendar": {
       "title": "Ishlab chiqarish taqvimi",
       "noTasks": "Rejalashtirilgan vazifalar yo'q"
-    },
-    "home": {
-      "roleLabel": "Rol:",
-      "roleValue": "Tsex ishchisi",
-      "specializationLabel": "Mutaxassislik:"
     }
   },
-
   "admin": {
     "layout": {
       "role": "Administrator",
@@ -145,6 +156,32 @@
         "logout": "Chiqish"
       }
     },
+    "dashboard": {
+      "stats": {
+        "materials": "Ombordagi materiallar",
+        "lowStock": "Omborda kam",
+        "products": "Mahsulotlar",
+        "productions": "Ishlab chiqarishlar",
+        "active": "Faol ishlab chiqarishlar",
+        "contracts": "Shartnomalar",
+        "persons": "Xodimlar",
+        "requests": "Xarid so'rovlari"
+      },
+      "recent": {
+        "title": "So'nggi ishlab chiqarishlar",
+        "table": {
+          "product": "Mahsulot",
+          "client": "Mijoz",
+          "date": "Sana",
+          "status": "Holat"
+        }
+      },
+      "lowStock": {
+        "title": "Tugayotgan materiallar",
+        "allGood": "Barcha materiallar yetarli"
+      },
+      "empty": "Ma'lumot yo'q"
+    },
     "contracts": {
       "title": "Shartnomalar",
       "buttons": {
@@ -156,7 +193,7 @@
       "form": {
         "newTitle": "Yangi shartnoma",
         "editTitle": "Shartnomani tahrirlash",
-        "clientName": "Mijozning F.I.Sh",
+        "clientName": "Mijozning F.I.SH",
         "phone": "Telefon",
         "address": "Manzil",
         "selectProduct": "— Mahsulot —"
@@ -166,19 +203,19 @@
         "quantity": "Soni",
         "price": "Narxi",
         "productionDate": "Ishlab chiqarish sanasi",
-        "status": "Holati",
+        "status": "Holat",
         "actions": "Harakatlar",
         "noItems": "Pozitsiyalar yo'q"
       },
       "address": {
         "errorEmpty": "Manzilni kiriting",
-        "errorCheck": "Manzilni tekshirishda xatolik",
+        "errorCheck": "Manzilni tekshirishda xato",
         "checking": "Tekshirilmoqda...",
         "check": "Tekshirish"
       },
       "confirm": {
-        "deleteContract": "Shartnoma o'chirilsinmi?",
-        "deleteItem": "Pozitsiya o'chirilsinmi?"
+        "deleteContract": "Shartnomani o'chirmoqchimisiz?",
+        "deleteItem": "Pozitsiyani o'chirmoqchimisiz?"
       },
       "alert": {
         "productionStarted": "✅ \"{{product}}\" uchun ishlab chiqarish boshlandi!"
@@ -193,22 +230,25 @@
       "form": {
         "name": "Nomi",
         "unit": "Birlik (kg, m², dona)",
-        "quantity": "Miqdori",
+        "quantity": "Soni",
         "pricePerUnit": "Birlik narxi",
         "minQuantity": "Min. qoldiq",
-        "specialization": "Mutaxassislik (kimga tegishli)"
+        "specialization": "Ixtisoslashuv (kimga tegishli)"
+      },
+      "specialization": {
+        "any": "Umumiy (hamma uchun)"
       },
       "table": {
         "name": "Nomi",
-        "unit": "Birligi",
-        "quantity": "Miqdori",
+        "unit": "Birlik",
+        "quantity": "Soni",
         "price": "Birlik narxi",
         "actions": "Harakatlar",
         "minQuantity": "Minimal miqdor",
-        "specialization": "Mutaxassisligi"
+        "specialization": "Ixtisoslashuv"
       },
       "confirm": {
-        "delete": "Material o'chirilsinmi?"
+        "delete": "Materialni o'chirmoqchimisiz?"
       },
       "empty": "Hozircha materiallar yo'q"
     },
@@ -220,12 +260,12 @@
       "form": {
         "newTitle": "Yangi xodim",
         "editTitle": "Tahrirlash",
-        "fullName": "F.I.Sh",
+        "fullName": "F.I.SH",
         "phone": "Telefon",
-        "specialization": "Mutaxassislik"
+        "specialization": "Ixtisoslashuv"
       },
       "confirm": {
-        "delete": "Xodim o'chirilsinmi?"
+        "delete": "Xodimni o'chirmoqchimisiz?"
       },
       "empty": "Hozircha xodimlar yo'q"
     },
@@ -236,8 +276,8 @@
         "create": "Boshlash",
         "showStages": "▼ Bosqichlar",
         "complete": "✅ Tugatish",
-        "completing": "Tugallanmoqda...",
-        "addStage": "+ Bosqich belgilash"
+        "completing": "Tugatilyapti...",
+        "addStage": "+ Bosqichni tayinlash"
       },
       "form": {
         "newTitle": "Yangi ishlab chiqarish",
@@ -246,29 +286,38 @@
         "contract": "Shartnoma (ixtiyoriy)",
         "noContract": "— Shartnomasiz —",
         "selectStage": "— Bosqich —",
-        "selectWorker": "— Ishchi —",
+        "selectWorker": "— Xodim —",
         "order": "Tartib"
       },
       "table": {
         "stage": "Bosqich",
-        "worker": "Ishchi",
-        "status": "Holati",
+        "worker": "Xodim",
+        "status": "Holat",
         "actions": "Harakatlar"
       },
       "confirm": {
-        "complete": "Ishlab chiqarish tugatilsinmi? Materiallar ombordan hisobdan chiqariladi.",
-        "delete": "Ishlab chiqarish o'chirilsinmi?",
-        "deleteStage": "Bu bosqich o'chirilsinmi?"
+        "complete": "Ishlab chiqarishni tugatmoqchimisiz? Materiallar ombordan hisobdan chiqariladi.",
+        "delete": "Ishlab chiqarishni o'chirmoqchimisiz?",
+        "deleteStage": "Bu bosqichni o'chirmoqchimisiz?"
       },
       "alert": {
-        "completed": "✅ Ishlab chiqarish tugatildi, materiallar hisobdan chiqarildi!",
+        "completed": "✅ Ishlab chiqarish tugallandi, materiallar hisobdan chiqarildi!",
         "insufficientMaterials": "❌ Materiallar yetarli emas:",
-        "error": "Ishlab chiqarishni tugatishda xatolik"
+        "error": "Ishlab chiqarishni tugatishda xato"
       },
-      "empty": "Hozircha ishlab chiqarish yo'q"
+      "empty": "Hozircha ishlab chiqarishlar yo'q"
     },
     "products": {
       "title": "Mahsulotlar",
+      "stagesTitle": "🛠 Yig'ish bosqichlari (Texkarta)",
+      "materialsTitle": "📦 Mahsulot materiallari",
+      "stageEmpty": "Bosqichlar sozlanmagan (standart bo'yicha Karkas yaratiladi)",
+      "selectStage": "— Bosqichni tanlang —",
+      "addStage": "+ Bosqich qo'shish",
+      "order": "Tartib",
+      "stageUse": "Foydalanish bosqichi",
+      "forWhichStage": "— Qaysi bosqich uchun? —",
+      "bindMaterial": "+ Materialni biriktirish",
       "buttons": {
         "add": "+ Mahsulot qo'shish",
         "create": "Mahsulot yaratish",
@@ -290,7 +339,7 @@
         "noMaterials": "Materiallar qo'shilmagan"
       },
       "confirm": {
-        "delete": "Mahsulot o'chirilsinmi? Barcha bog'liq materiallar ham o'chiriladi."
+        "delete": "Mahsulotni o'chirmoqchimisiz? Barcha bog'langan materiallar ham o'chiriladi."
       },
       "alert": {
         "noProductId": "Xato: Mahsulot ID si aniqlanmadi"
@@ -302,7 +351,17 @@
       "tabs": {
         "materials": "📦 Materiallar harakati",
         "profit": "💰 Mahsulotlar bo'yicha foyda",
-        "contracts": "📋 Shartnomalar statistikasi"
+        "contracts": "📋 Shartnomalar statistikasi",
+        "salaries": "💳 Ish haqlari"
+      },
+      "salaries": {
+        "totalFund": "Umumiy to'langan ish haqi fondi",
+        "table": {
+          "worker": "Xodim",
+          "specialization": "Ixtisoslashuv",
+          "completedProducts": "Tugallangan mahsulotlar",
+          "totalEarned": "Jami ishlangan"
+        }
       },
       "materials": {
         "writeOffs": "Hisobdan chiqarishlar",
@@ -314,18 +373,22 @@
           "date": "Sana",
           "material": "Material",
           "type": "Turi",
-          "quantity": "Miqdori",
+          "quantity": "Soni",
           "comment": "Izoh"
         }
       },
       "profit": {
         "productsProduced": "Ishlab chiqarilgan mahsulotlar",
-        "totalRevenue": "Umumiy daromad",
+        "totalRevenue": "Umumiy tushum (100%)",
+        "netProfit": "Sof foyda (10%)",
         "table": {
           "product": "Mahsulot",
           "price": "Sotish narxi",
-          "count": "Ishlab chiqarishlar soni",
-          "revenue": "Daromad"
+          "count": "Soni",
+          "revenue": "Tushum (100%)",
+          "labor": "Ish haqi fondi (45%)",
+          "expenses": "Xarajatlar (45%)",
+          "netProfit": "Foyda (10%)"
         }
       },
       "contracts": {
@@ -340,7 +403,7 @@
           "amount": "Summa"
         }
       },
-      "empty": "Ma'lumotlar yo'q"
+      "empty": "Ma'lumot yo'q"
     },
     "supply": {
       "title": "Materiallar ta'minoti",
@@ -353,15 +416,15 @@
         "material": "Material",
         "selectMaterial": "— Materialni tanlang —",
         "stock": "(qoldiq: {{quantity}} {{unit}})",
-        "quantity": "Miqdori",
-        "quantityPlaceholder": "Miqdorni kiriting",
-        "comment": "Izoh (yetkazib beruvchi, yukxat)",
-        "commentPlaceholder": "Yetkazib beruvchi Ahmadov, yukxat №123"
+        "quantity": "Soni",
+        "quantityPlaceholder": "Sonini kiriting",
+        "comment": "Izoh (yetkazib beruvchi, yuk xati)",
+        "commentPlaceholder": "Yetkazib beruvchi Ahmadov, yuk xati №123"
       },
       "table": {
         "date": "Sana",
         "material": "Material",
-        "quantity": "Miqdori",
+        "quantity": "Soni",
         "comment": "Izoh"
       },
       "empty": "Hozircha ta'minotlar yo'q"

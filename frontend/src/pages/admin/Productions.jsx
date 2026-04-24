@@ -171,117 +171,139 @@ export default function Productions() {
         {productions.length === 0 && (
           <div style={s.empty}>{t('admin.productions.empty')}</div>
         )}
-        {productions.map(prod => (
-          <div key={prod.id} style={s.card}>
-            <div style={s.cardHeader}>
-              <div>
-                <span style={s.productName}>{prod.product_name}</span>
-                {prod.contract_info && (
-                  <span style={s.personName}>
-                    📋 {prod.contract_info.client_name}
-                  </span>
-                )}
-                <span style={s.date}>
-                  {new Date(prod.created_at).toLocaleDateString('ru-RU')}
-                </span>
-                <span style={{
-                  ...s.statusBadge,
-                  background: prod.status === 'completed' ? '#dcfce7' :
-                              prod.status === 'started'   ? '#dbeafe' : '#fef9c3',
-                  color:      prod.status === 'completed' ? '#16a34a' :
-                              prod.status === 'started'   ? '#1d4ed8' : '#854d0e',
-                }}>
-                  {t(`status.${prod.status}`)}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button style={s.expandBtn}
-                  onClick={() => setExpanded(expanded === prod.id ? null : prod.id)}>
-                  {expanded === prod.id
-                    ? t('common.hide')
-                    : `${t('admin.productions.buttons.showStages')} (${prod.stages.length})`}
-                </button>
-                <button
-                  style={{ ...s.completeBtn, opacity: completing === prod.id ? 0.6 : 1 }}
-                  onClick={() => handleComplete(prod.id)}
-                  disabled={completing === prod.id || prod.status === 'completed'}>
-                  {completing === prod.id
-                      ? t('admin.productions.buttons.completing')
-                      : t('admin.productions.buttons.complete')}
-                </button>
-                <button style={s.delBtn} onClick={() => handleDelete(prod.id)}>
-                  {t('common.delete')}
-                </button>
-              </div>
-            </div>
+        {productions.map(prod => {
+          // Высчитываем финальный дедлайн (дедлайн последнего этапа)
+          const lastStage = prod.stages.length > 0 ? prod.stages[prod.stages.length - 1] : null;
+          const finalDeadline = lastStage && lastStage.deadline
+            ? new Date(lastStage.deadline).toLocaleDateString('ru-RU')
+            : 'Не определен';
 
-            {expanded === prod.id && (
-              <div style={s.stagesBlock}>
-                <table style={s.table}>
-                  <thead>
-                    <tr style={{ background: '#f9f9f9' }}>
-                      <th style={s.th}>{t('admin.productions.table.stage')}</th>
-                      <th style={s.th}>{t('admin.productions.table.worker')}</th>
-                      <th style={s.th}>{t('admin.productions.table.status')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {prod.stages.map(stage => (
-                      <tr key={stage.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                        <td style={s.td}>{STAGE_LABELS[stage.stage_type] || stage.stage_type}</td>
-                        <td style={s.td}>
-                          {editStage?.id === stage.id ? (
-                            <form onSubmit={handleUpdateStage} style={{ display: 'flex', gap: 8 }}>
-                              <select style={s.select} required
-                                value={editStage.assigned_worker}
-                                onChange={e => setEditStage({ ...editStage, assigned_worker: e.target.value })}>
-                                <option value="">— Назначить рабочего —</option>
-                                {persons
-                                  .filter(p => p.specialization === stage.stage_type || p.specialization === 'none')
-                                  .map(p => (
-                                    <option key={p.id} value={p.id}>{p.full_name}</option>
-                                  ))
-                                }
-                              </select>
-                              <button style={s.btn} type="submit">✓</button>
-                              <button style={s.cancelBtn} type="button"
-                                onClick={() => setEditStage(null)}>✕</button>
-                            </form>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                              <span style={{ color: stage.assigned_worker_name ? '#000' : '#dc2626', fontWeight: stage.assigned_worker_name ? 'normal' : '600' }}>
-                                  {stage.assigned_worker_name || '⚠️ Не назначен'}
-                              </span>
-                              {prod.status !== 'completed' && stage.status !== 'completed' && (
-                                <button style={s.editBtn}
-                                  onClick={() => setEditStage({
-                                    id: stage.id,
-                                    stage_type: stage.stage_type,
-                                    assigned_worker: stage.assigned_worker || '',
-                                  })}>
-                                  {t('common.edit')}
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td style={s.td}>
-                          <span style={{
-                            ...s.badge,
-                            background: STATUS_LABELS[stage.status]?.color + '20',
-                            color: STATUS_LABELS[stage.status]?.color,
-                          }}>
-                            {STATUS_LABELS[stage.status]?.label}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          return (
+            <div key={prod.id} style={s.card}>
+              <div style={s.cardHeader}>
+                <div>
+                  <span style={s.productName}>{prod.product_name}</span>
+                  {prod.contract_info && (
+                    <span style={s.personName}>
+                      📋 {prod.contract_info.client_name}
+                    </span>
+                  )}
+                  {/* ОТОБРАЖЕНИЕ ОБЩЕГО СРОКА */}
+                  <span style={s.date}>
+                    Срок: {new Date(prod.created_at).toLocaleDateString('ru-RU')} — {finalDeadline}
+                  </span>
+                  <span style={{
+                    ...s.statusBadge,
+                    background: prod.status === 'completed' ? '#dcfce7' :
+                                prod.status === 'started'   ? '#dbeafe' : '#fef9c3',
+                    color:      prod.status === 'completed' ? '#16a34a' :
+                                prod.status === 'started'   ? '#1d4ed8' : '#854d0e',
+                  }}>
+                    {t(`status.${prod.status}`)}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button style={s.expandBtn}
+                    onClick={() => setExpanded(expanded === prod.id ? null : prod.id)}>
+                    {expanded === prod.id
+                      ? t('common.hide')
+                      : `${t('admin.productions.buttons.showStages')} (${prod.stages.length})`}
+                  </button>
+                  <button
+                    style={{ ...s.completeBtn, opacity: completing === prod.id ? 0.6 : 1 }}
+                    onClick={() => handleComplete(prod.id)}
+                    disabled={completing === prod.id || prod.status === 'completed'}>
+                    {completing === prod.id
+                        ? t('admin.productions.buttons.completing')
+                        : t('admin.productions.buttons.complete')}
+                  </button>
+                  <button style={s.delBtn} onClick={() => handleDelete(prod.id)}>
+                    {t('common.delete')}
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              {expanded === prod.id && (
+                <div style={s.stagesBlock}>
+                  <table style={s.table}>
+                    <thead>
+                      <tr style={{ background: '#f9f9f9' }}>
+                        <th style={s.th}>{t('admin.productions.table.stage')}</th>
+                        <th style={s.th}>{t('admin.productions.table.worker')}</th>
+                        <th style={s.th}>Срок (Дедлайн)</th>
+                        <th style={s.th}>{t('admin.productions.table.status')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {prod.stages.map(stage => {
+                        // Проверяем, просрочен ли дедлайн
+                        const isOverdue = stage.status !== 'completed' && stage.deadline && new Date(stage.deadline) < new Date();
+
+                        return (
+                          <tr key={stage.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                            <td style={s.td}>{STAGE_LABELS[stage.stage_type] || stage.stage_type}</td>
+                            <td style={s.td}>
+                              {editStage?.id === stage.id ? (
+                                <form onSubmit={handleUpdateStage} style={{ display: 'flex', gap: 8 }}>
+                                  <select style={s.select} required
+                                    value={editStage.assigned_worker}
+                                    onChange={e => setEditStage({ ...editStage, assigned_worker: e.target.value })}>
+                                    <option value="">— Назначить рабочего —</option>
+                                    {persons
+                                      .filter(p => p.specialization === stage.stage_type || p.specialization === 'none')
+                                      .map(p => (
+                                        <option key={p.id} value={p.id}>{p.full_name}</option>
+                                      ))
+                                    }
+                                  </select>
+                                  <button style={s.btn} type="submit">✓</button>
+                                  <button style={s.cancelBtn} type="button"
+                                    onClick={() => setEditStage(null)}>✕</button>
+                                </form>
+                              ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                  <span style={{ color: stage.assigned_worker_name ? '#000' : '#dc2626', fontWeight: stage.assigned_worker_name ? 'normal' : '600' }}>
+                                      {stage.assigned_worker_name || '⚠️ Не назначен'}
+                                  </span>
+                                  {prod.status !== 'completed' && stage.status !== 'completed' && (
+                                    <button style={s.editBtn}
+                                      onClick={() => setEditStage({
+                                        id: stage.id,
+                                        stage_type: stage.stage_type,
+                                        assigned_worker: stage.assigned_worker || '',
+                                      })}>
+                                      {t('common.edit')}
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* ОТОБРАЖЕНИЕ ДЕДЛАЙНА С ПОДСВЕТКОЙ ПРОСРОЧКИ */}
+                            <td style={{ ...s.td, color: isOverdue ? '#dc2626' : '#374151', fontWeight: isOverdue ? 600 : 400 }}>
+                              {stage.deadline ? new Date(stage.deadline).toLocaleDateString('ru-RU') : '—'}
+                              {isOverdue && ' ⚠️'}
+                            </td>
+
+                            <td style={s.td}>
+                              <span style={{
+                                ...s.badge,
+                                background: STATUS_LABELS[stage.status]?.color + '20',
+                                color: STATUS_LABELS[stage.status]?.color,
+                              }}>
+                                {STATUS_LABELS[stage.status]?.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -304,7 +326,7 @@ const s = {
   cardHeader:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px' },
   productName:   { fontWeight: 700, fontSize: 16, marginRight: 12 },
   personName:    { color: '#666', fontSize: 14, marginRight: 12 },
-  date:          { color: '#aaa', fontSize: 13 },
+  date:          { color: '#6366f1', fontSize: 14, fontWeight: 600 },
   expandBtn:     { background: '#f0f0ff', color: '#4f46e5', border: 'none', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontWeight: 500, fontSize: 13 },
   delBtn:        { background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 14px', borderRadius: 6, cursor: 'pointer', fontWeight: 500 },
   stagesBlock:   { borderTop: '1px solid #f0f0f0', padding: '16px 20px', background: '#fafafa' },

@@ -155,19 +155,19 @@ class ProductionStage(models.Model):
         Production, on_delete=models.CASCADE, related_name='stages'
     )
     stage_type = models.CharField(max_length=20, choices=STAGE_CHOICES)
-
-    # ИЗМЕНЕНИЕ ЗДЕСЬ: Разрешаем этапу быть без назначенного работника при старте
     assigned_worker = models.ForeignKey(
         Person, on_delete=models.PROTECT, verbose_name="Назначенный работник",
         null=True, blank=True
     )
-
     order = models.PositiveIntegerField(default=0, verbose_name="Порядок выполнения")
     status = models.CharField(
         max_length=15, choices=STATUS_CHOICES, default='pending'
     )
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+
+    # --- НОВОЕ ПОЛЕ ---
+    deadline = models.DateTimeField(null=True, blank=True, verbose_name="Дедлайн этапа")
 
     class Meta:
         verbose_name = "Этап производства"

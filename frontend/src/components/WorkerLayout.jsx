@@ -1,38 +1,46 @@
-import { useAuth } from '../../context/AuthContext';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
-import { useTranslation } from 'react-i18next'; // ← Добавлен импорт
+import { useTranslation } from 'react-i18next';
 
 const menuItems = [
-  { path: '/worker/dashboard', key: 'dashboard',  icon: '🏠' },
-  { path: '/worker/tasks',     key: 'tasks',      icon: '🪑' },
-  { path: '/worker/calendar',  key: 'calendar',   icon: '📅' },
+  { path: '/worker/dashboard', key: 'dashboard', icon: '🏠' },
+  { path: '/worker/tasks',     key: 'tasks',     icon: '🪑' },
+  { path: '/worker/calendar',  key: 'calendar',  icon: '📅' },
 ];
 
 export default function WorkerLayout() {
   const { user, logout } = useAuth();
-  const { t, i18n } = useTranslation(); // ← Инициализация хука
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Подхватываем тему (без кнопки переключения)
+  const [isDark] = useState(localStorage.getItem('theme') === 'dark');
+
+  useEffect(() => {
+    if (isDark) {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  }, [isDark]);
 
   return (
     <div style={s.wrapper}>
       <aside style={s.sidebar}>
-        <div style={s.logo}>
-          <div style={s.avatar}>{user?.username?.charAt(0).toUpperCase()}</div>
-          <div>
-            <div style={s.username}>{user?.username}</div>
-            <div style={s.role}>{t('worker.layout.role')}</div>
-          </div>
-        </div>
+        <div style={s.logo}>Wallman</div>
 
         <nav style={s.nav}>
           {menuItems.map(item => (
-            <button key={item.path}
+            <button
+              key={item.path}
               style={{
                 ...s.navItem,
                 ...(location.pathname === item.path ? s.navItemActive : {})
               }}
-              onClick={() => navigate(item.path)}>
+              onClick={() => navigate(item.path)}
+            >
               <span style={s.icon}>{item.icon}</span>
               {t(`worker.layout.menu.${item.key}`)}
             </button>
@@ -40,7 +48,6 @@ export default function WorkerLayout() {
         </nav>
 
         <div style={s.bottom}>
-          {/* Выбор языка */}
           <div style={s.langSwitcher}>
             <select
               style={s.langSelect}
@@ -53,9 +60,19 @@ export default function WorkerLayout() {
             </select>
           </div>
 
-          <button style={s.logoutBtn} onClick={() => { logout(); navigate('/login'); }}>
-            {t('worker.layout.buttons.logout')}
-          </button>
+          <div style={s.userBlock}>
+            <div style={s.avatar}>{user?.username?.charAt(0).toUpperCase()}</div>
+            <div style={s.userInfo}>
+              <div style={s.username}>{user?.username}</div>
+              <div style={s.role}>{t('worker.layout.role')}</div>
+            </div>
+            <button
+              style={s.logoutBtn}
+              onClick={() => { logout(); navigate('/login'); }}
+            >
+              🚪
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -67,35 +84,21 @@ export default function WorkerLayout() {
 }
 
 const s = {
-  wrapper:     { display: 'flex', minHeight: '100vh', background: '#f5f6fa' },
-  sidebar:     { width: 240, background: '#1e1b4b', display: 'flex',
-                 flexDirection: 'column', padding: '24px 0',
-                 position: 'fixed', top: 0, left: 0, bottom: 0 },
-  logo:        { display: 'flex', alignItems: 'center', gap: 12,
-                 padding: '0 20px 24px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                 marginBottom: 16 },
-  avatar:      { width: 40, height: 40, borderRadius: '50%', background: '#4f46e5',
-                 color: '#fff', display: 'flex', alignItems: 'center',
-                 justifyContent: 'center', fontSize: 18, fontWeight: 700, flexShrink: 0 },
-  username:    { color: '#fff', fontWeight: 700, fontSize: 14 },
-  role:        { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 2 },
-  nav:         { flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: '0 12px' },
-  navItem:     { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
-                 borderRadius: 8, border: 'none', background: 'transparent',
-                 color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 14,
-                 fontWeight: 500, textAlign: 'left' },
-  navItemActive:{ background: 'rgba(255,255,255,0.15)', color: '#fff' },
-  icon:        { fontSize: 18, width: 24, textAlign: 'center' },
-
-  /* Новые стили для нижней части панели */
-  bottom:      { padding: '16px 12px 0', marginTop: 'auto' },
-  langSwitcher:{ marginBottom: 12 },
-  langSelect:  { width: '100%', padding: '8px 12px', borderRadius: 8,
-                 border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)',
-                 color: '#fff', fontSize: 13, cursor: 'pointer', outline: 'none' },
-  logoutBtn:   { width: '100%', padding: '10px', borderRadius: 8,
-                 border: 'none', background: 'rgba(255,255,255,0.1)',
-                 color: '#fff', cursor: 'pointer', fontWeight: 500 },
-
-  main:        { flex: 1, marginLeft: 240, minHeight: '100vh' },
+  wrapper:       { display: 'flex', minHeight: '100vh', background: 'var(--bg-main)', transition: '0.3s' },
+  sidebar:       { width: 240, background: 'var(--sidebar-bg)', display: 'flex', flexDirection: 'column', padding: '24px 0', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 100, boxShadow: '4px 0 10px rgba(0,0,0,0.2)' },
+  logo:          { color: '#ffffff', fontSize: 24, fontWeight: 800, padding: '0 24px', marginBottom: 32, letterSpacing: '0.5px' },
+  nav:           { flex: 1, display: 'flex', flexDirection: 'column', gap: 4, padding: '0 12px' },
+  navItem:       { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 8, border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 15, fontWeight: 500, textAlign: 'left', transition: '0.2s' },
+  navItemActive: { background: 'var(--sidebar-active)', color: '#ffffff', fontWeight: 600 },
+  icon:          { fontSize: 18, width: 24, textAlign: 'center' },
+  bottom:        { padding: '0 16px', marginTop: 'auto' },
+  langSwitcher:  { marginBottom: 16 },
+  langSelect:    { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: '#ffffff', fontSize: 13, cursor: 'pointer', outline: 'none' },
+  userBlock:     { display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 16 },
+  avatar:        { width: 36, height: 36, borderRadius: '50%', background: 'var(--sidebar-active)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, flexShrink: 0 },
+  userInfo:      { flex: 1, overflow: 'hidden' },
+  username:      { color: '#ffffff', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' },
+  role:          { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 2 },
+  logoutBtn:     { background: 'transparent', border: 'none', color: '#ffffff', fontSize: 18, cursor: 'pointer', padding: 4, opacity: 0.7 },
+  main:          { flex: 1, marginLeft: 240, minHeight: '100vh', padding: '32px' }
 };

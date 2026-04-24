@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useTranslation } from 'react-i18next'; // ← Добавлен импорт
+import { useTranslation } from 'react-i18next';
 
 const API = 'http://127.0.0.1:8000';
 
 export default function Reports() {
-  const { t } = useTranslation(); // ← Инициализация хука
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab]       = useState('materials');
   const [transactions, setTransactions] = useState([]);
@@ -13,7 +13,7 @@ export default function Reports() {
   const [productions, setProductions]   = useState([]);
   const [products, setProducts]         = useState([]);
   const [loading, setLoading]           = useState(true);
-
+  const [salaries, setSalaries]         = useState([]);
   const token = localStorage.getItem('token');
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -22,11 +22,13 @@ export default function Reports() {
       axios.get(`${API}/api/transactions/`, { headers }),
       axios.get(`${API}/api/contracts/`, { headers }),
       axios.get(`${API}/api/productions/`, { headers }),
+      axios.get(`${API}/api/reports/salaries/`, { headers }),
       axios.get(`${API}/api/products/`, { headers }),
-    ]).then(([t_res, c, p, pr]) => {
+    ]).then(([t_res, c, p, sal, pr]) => {
       setTransactions(t_res.data);
       setContracts(c.data);
       setProductions(p.data);
+      setSalaries(sal.data);
       setProducts(pr.data);
       setLoading(false);
     });
@@ -40,21 +42,23 @@ export default function Reports() {
       p => p.product === product.id || p.product_name === product.name
     );
 
-    // Себестоимость = сумма списаний материалов для этого изделия
-    const materialCost = transactions
-      .filter(t_obj => t_obj.transaction_type === 'out')
-      .reduce((sum, t_obj) => sum + parseFloat(t_obj.quantity || 0), 0);
+    const count = productProductions.length;
+    const price = parseFloat(product.price) || 0;
 
-    const revenue = parseFloat(product.price) * productProductions.length;
-    const profit  = revenue - materialCost;
+    const revenue = price * count;           // 100% (Выручка)
+    const laborCost = revenue * 0.45;        // 45% (Зарплаты/ФОТ)
+    const expensesCost = revenue * 0.45;     // 45% (Ресурсы, аренда)
+    const netProfit = revenue * 0.10;        // 10% (Чистая прибыль)
 
     return {
-      id:          product.id,
-      name:        product.name,
-      price:       product.price,
-      count:       productProductions.length,
-      revenue:     revenue,
-      profit:      profit,
+      id:           product.id,
+      name:         product.name,
+      price:        price,
+      count:        count,
+      revenue:      revenue,
+      laborCost:    laborCost,
+      expensesCost: expensesCost,
+      profit:       netProfit,
     };
   }).filter(p => p.count > 0);
 
@@ -75,6 +79,7 @@ export default function Reports() {
   const tabs = [
     { key: 'materials', label: t('admin.reports.tabs.materials') },
     { key: 'profit',    label: t('admin.reports.tabs.profit') },
+    { key: 'salaries',  label: t('admin.reports.tabs.salaries') },
     { key: 'contracts', label: t('admin.reports.tabs.contracts') },
   ];
 
@@ -160,11 +165,17 @@ export default function Reports() {
               <div style={s.summaryNum}>{profitByProduct.length}</div>
               <div style={s.summaryLabel}>{t('admin.reports.profit.productsProduced')}</div>
             </div>
-            <div style={{ ...s.summaryCard, borderTop: '4px solid #16a34a' }}>
+            <div style={{ ...s.summaryCard, borderTop: '4px solid #3b82f6' }}>
               <div style={s.summaryNum}>
                 {profitByProduct.reduce((s_val, p) => s_val + p.revenue, 0).toLocaleString()} {t('common.currency')}
               </div>
               <div style={s.summaryLabel}>{t('admin.reports.profit.totalRevenue')}</div>
+            </div>
+            <div style={{ ...s.summaryCard, borderTop: '4px solid #16a34a' }}>
+              <div style={s.summaryNum}>
+                {profitByProduct.reduce((s_val, p) => s_val + p.profit, 0).toLocaleString()} {t('common.currency')}
+              </div>
+              <div style={s.summaryLabel}>{t('admin.reports.profit.netProfit')}</div>
             </div>
           </div>
 
@@ -175,20 +186,72 @@ export default function Reports() {
                 <th style={s.th}>{t('admin.reports.profit.table.price')}</th>
                 <th style={s.th}>{t('admin.reports.profit.table.count')}</th>
                 <th style={s.th}>{t('admin.reports.profit.table.revenue')}</th>
+                <th style={s.th}>{t('admin.reports.profit.table.labor')}</th>
+                <th style={s.th}>{t('admin.reports.profit.table.expenses')}</th>
+                <th style={s.th}>{t('admin.reports.profit.table.netProfit')}</th>
               </tr>
             </thead>
             <tbody>
               {profitByProduct.length === 0 && (
-                <tr><td colSpan={4} style={s.empty}>{t('admin.reports.empty')}</td></tr>
+                <tr><td colSpan={7} style={s.empty}>{t('admin.reports.empty')}</td></tr>
               )}
               {profitByProduct.map(p => (
                 <tr key={p.id} style={s.tr}>
                   <td style={s.td}><strong>{p.name}</strong></td>
-                  <td style={s.td}>{Number(p.price).toLocaleString()} {t('common.currency')}</td>
+                  <td style={s.td}>{p.price.toLocaleString()} {t('common.currency')}</td>
                   <td style={s.td}>{p.count} {t('common.units.pcs')}</td>
+                  <td style={s.td}><strong>{p.revenue.toLocaleString()}</strong></td>
+                  <td style={s.td}>
+                    <span style={{ color: '#ef4444' }}>-{p.laborCost.toLocaleString()}</span>
+                  </td>
+                  <td style={s.td}>
+                    <span style={{ color: '#f59e0b' }}>-{p.expensesCost.toLocaleString()}</span>
+                  </td>
                   <td style={s.td}>
                     <span style={{ color: '#16a34a', fontWeight: 600 }}>
-                      {p.revenue.toLocaleString()} {t('common.currency')}
+                      {p.profit.toLocaleString()} {t('common.currency')}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Вкладка: Заработные платы */}
+      {activeTab === 'salaries' && (
+        <div>
+          <div style={s.summaryRow}>
+            <div style={{ ...s.summaryCard, borderTop: '4px solid #14b8a6' }}>
+              <div style={s.summaryNum}>
+                {salaries.reduce((sum, w) => sum + parseFloat(w.total_earned), 0).toLocaleString()} {t('common.currency')}
+              </div>
+              <div style={s.summaryLabel}>{t('admin.reports.salaries.totalFund')}</div>
+            </div>
+          </div>
+
+          <table style={s.table}>
+            <thead>
+              <tr style={s.thead}>
+                <th style={s.th}>{t('admin.reports.salaries.table.worker')}</th>
+                <th style={s.th}>{t('admin.reports.salaries.table.specialization')}</th>
+                <th style={s.th}>{t('admin.reports.salaries.table.completedProducts')}</th>
+                <th style={s.th}>{t('admin.reports.salaries.table.totalEarned')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {salaries.length === 0 && (
+                <tr><td colSpan={4} style={s.empty}>{t('admin.reports.empty')}</td></tr>
+              )}
+              {salaries.map(worker => (
+                <tr key={worker.worker__id} style={s.tr}>
+                  <td style={s.td}><strong>{worker.worker__full_name}</strong></td>
+                  <td style={s.td}>{t(`specializations.${worker.worker__specialization}`)}</td>
+                  <td style={s.td}>{worker.completed_products} {t('common.units.pcs')}</td>
+                  <td style={s.td}>
+                    <span style={{ color: '#16a34a', fontWeight: 600 }}>
+                      {Number(worker.total_earned).toLocaleString()} {t('common.currency')}
                     </span>
                   </td>
                 </tr>

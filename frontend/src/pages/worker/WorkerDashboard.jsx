@@ -41,6 +41,12 @@ export default function WorkerDashboard() {
     }
   };
 
+  const [stats, setStats] = useState({ completed_this_month: 0 });
+  useEffect(() => {
+    axios.get(`${API}/api/worker-stats/`, { headers })
+        .then(res => setStats(res.data))
+        .catch(err => console.error(err));
+}, []);
   // Открыть форму списания
   const openWriteoff = (stage) => {
     const initQty = {};
@@ -113,6 +119,10 @@ export default function WorkerDashboard() {
         <div style={{ ...s.statCard, borderTop: '4px solid #16a34a' }}>
           <div style={s.statNum}>{completed.length}</div>
           <div style={s.statLabel}>{t('worker.dashboard.stats.completed')}</div>
+        </div>
+        <div style={s.statCard}>
+        <   h3>{stats.completed_this_month}</h3>
+        <p>Выполнено за {t(`months.${stats.month_name}`)}</p>
         </div>
       </div>
 

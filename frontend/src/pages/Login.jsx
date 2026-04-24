@@ -29,7 +29,7 @@ export default function Login() {
   return (
     <div style={styles.wrapper}>
       <div style={styles.card}>
-        <h2 style={styles.title}>FurnitureForge ERP</h2>
+        <h2 style={styles.title}>Wallman ERP</h2>
         <p style={styles.subtitle}>Войдите в систему</p>
 
         <form onSubmit={handleSubmit}>

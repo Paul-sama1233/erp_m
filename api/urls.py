@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from contracts.views import generate_contract_pdf
 from contracts.views import ValidateAddressLocationIQView
+from .views import SalaryReportView
 
 # Импортируем все существующие views
 from .views import (
@@ -12,6 +13,7 @@ from .views import (
     PersonViewSet, ProductionViewSet, ProductionStageViewSet,
     ContractViewSet, ContractProductViewSet,
     MyStagesView, DashboardStatsView, StageActionView, ProductStageTemplateViewSet,
+    WorkerStatsView, SalaryReportView
 )
 
 # Новый импорт для генерации договоров
@@ -31,6 +33,9 @@ router.register(r'product-stage-templates', ProductStageTemplateViewSet)
 router.register(r'contract-products', ContractProductViewSet)
 
 urlpatterns = [
+    path('reports/salaries/', SalaryReportView.as_view()),
+    path('worker-stats/', WorkerStatsView.as_view()),
+    path('', include(router.urls)),
     path('token/', CustomTokenObtainPairView.as_view()),
     path('token/refresh/', TokenRefreshView.as_view()),
     path('me/', MeView.as_view()),
@@ -42,9 +47,6 @@ urlpatterns = [
     path('contracts/<int:contract_id>/generate/pdf/',
          generate_contract_pdf, name=' generate_contract_pdf'),
 
-    path('contracts/validate-address/',
-         ValidateAddressLocationIQView.as_view(),
-         name=' validate_address_locationiq'),
     # Router должен быть в конце
     path('', include(router.urls)),
 ]

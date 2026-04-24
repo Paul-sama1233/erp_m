@@ -17,15 +17,11 @@
     },
     "currency": "UZS"
   },
-
-  "dashboard": {
-    "title": "Workshop Overview",
-    "materials_total": "Materials in Stock",
-    "low_stock": "Low Stock",
-    "products": "Products",
-    "productions": "Productions"
+  "status": {
+    "pending": "Pending",
+    "in_progress": "In Progress",
+    "completed": "Completed"
   },
-
   "stages": {
     "frame": "Frame",
     "springs": "Springs / Mechanisms",
@@ -33,22 +29,36 @@
     "foam": "Foam",
     "upholstery": "Upholstery"
   },
-
-  "status": {
-    "pending": "Pending",
-    "in_progress": "In Progress",
-    "completed": "Completed"
-  },
-
   "specializations": {
     "frame": "Framer",
-    "springs": "Spring Specialist / Mechanic",
+    "springs": "Spring Maker / Mechanic",
     "sewing": "Seamstress",
-    "foam": "Foam Specialist",
+    "foam": "Foam Cutter",
     "upholstery": "Upholsterer",
-    "none": "No Specialization"
+    "none": "No Specialization",
+    "any": "General (for all)"
   },
-
+  "dashboard": {
+    "title": "Workshop Overview",
+    "materials_total": "Materials in Stock",
+    "low_stock": "Low Stock",
+    "products": "Products",
+    "productions": "Productions"
+  },
+  "months": {
+    "January": "January",
+    "February": "February",
+    "March": "March",
+    "April": "April",
+    "May": "May",
+    "June": "June",
+    "July": "July",
+    "August": "August",
+    "September": "September",
+    "October": "October",
+    "November": "November",
+    "December": "December"
+  },
   "worker": {
     "layout": {
       "role": "Workshop Worker",
@@ -61,22 +71,29 @@
         "logout": "Logout"
       }
     },
+    "home": {
+      "roleLabel": "Role:",
+      "roleValue": "Workshop Worker",
+      "specializationLabel": "Specialization:"
+    },
     "dashboard": {
       "greeting": "Welcome, {{name}}!",
       "subtitle": "Your production tasks",
       "stats": {
         "pending": "Pending",
         "inProgress": "In Progress",
-        "completed": "Completed"
+        "completed": "Completed",
+        "completed_month": "Completed this month",
+        "total_admin": "Total completed"
       },
       "section": {
-        "inProgress": "🔨 Currently in progress",
         "pending": "⏳ Waiting to start",
+        "inProgress": "🔨 Currently in progress",
         "completed": "✅ Completed"
       },
       "modal": {
         "title": "Complete: {{stage}}",
-        "description": "Specify the quantity of materials to write off",
+        "description": "Enter the amount of materials to write off",
         "noMaterials": "No materials to write off",
         "stock": "In stock:",
         "norm": "Norm:"
@@ -86,11 +103,11 @@
       },
       "buttons": {
         "start": "▶ Start stage",
-        "complete": "✅ Complete stage",
-        "cancel": "Cancel",
-        "logout": "Logout",
         "starting": "Starting...",
-        "completing": "Completing..."
+        "complete": "✅ Complete stage",
+        "completing": "Completing...",
+        "cancel": "Cancel",
+        "logout": "Logout"
       }
     },
     "tasks": {
@@ -111,23 +128,17 @@
       },
       "buttons": {
         "start": "▶ Start stage",
-        "complete": "✅ Complete stage",
-        "cancel": "Cancel",
         "starting": "Starting...",
-        "completing": "Completing..."
+        "complete": "✅ Complete stage",
+        "completing": "Completing...",
+        "cancel": "Cancel"
       }
     },
     "calendar": {
       "title": "Production Calendar",
       "noTasks": "No scheduled tasks"
-    },
-    "home": {
-      "roleLabel": "Role:",
-      "roleValue": "Workshop Worker",
-      "specializationLabel": "Specialization:"
     }
   },
-
   "admin": {
     "layout": {
       "role": "Administrator",
@@ -138,25 +149,51 @@
         "productions": "Production",
         "contracts": "Contracts",
         "supply": "Supply",
-        "persons": "Staff",
+        "persons": "Employees",
         "reports": "Reports"
       },
       "buttons": {
         "logout": "Logout"
       }
     },
+    "dashboard": {
+      "stats": {
+        "materials": "Materials in stock",
+        "lowStock": "Low stock",
+        "products": "Products",
+        "productions": "Productions",
+        "active": "Active productions",
+        "contracts": "Contracts",
+        "persons": "Employees",
+        "requests": "Purchase requests"
+      },
+      "recent": {
+        "title": "Recent Productions",
+        "table": {
+          "product": "Product",
+          "client": "Client",
+          "date": "Date",
+          "status": "Status"
+        }
+      },
+      "lowStock": {
+        "title": "Materials running out",
+        "allGood": "All materials are sufficient"
+      },
+      "empty": "No data"
+    },
     "contracts": {
       "title": "Contracts",
       "buttons": {
         "newContract": "+ New Contract",
         "downloadPdf": "Download PDF Contract",
-        "startProduction": "To Production",
+        "startProduction": "Start Production",
         "addItem": "+ Add Item"
       },
       "form": {
         "newTitle": "New Contract",
         "editTitle": "Edit Contract",
-        "clientName": "Client Name",
+        "clientName": "Client Full Name",
         "phone": "Phone",
         "address": "Address",
         "selectProduct": "— Product —"
@@ -172,9 +209,9 @@
       },
       "address": {
         "errorEmpty": "Enter address",
-        "errorCheck": "Address check error",
+        "errorCheck": "Address verification error",
         "checking": "Checking...",
-        "check": "Check"
+        "check": "Verify"
       },
       "confirm": {
         "deleteContract": "Delete contract?",
@@ -196,7 +233,10 @@
         "quantity": "Quantity",
         "pricePerUnit": "Price per unit",
         "minQuantity": "Min. stock",
-        "specialization": "Specialization (who uses it)"
+        "specialization": "Specialization (belongs to)"
+      },
+      "specialization": {
+        "any": "General (for all)"
       },
       "table": {
         "name": "Name",
@@ -204,7 +244,7 @@
         "quantity": "Quantity",
         "price": "Price per unit",
         "actions": "Actions",
-        "minQuantity": "Minimum Quantity",
+        "minQuantity": "Minimum quantity",
         "specialization": "Specialization"
       },
       "confirm": {
@@ -213,21 +253,21 @@
       "empty": "No materials yet"
     },
     "persons": {
-      "title": "Workshop Staff",
+      "title": "Workshop Employees",
       "buttons": {
-        "add": "+ Add Staff"
+        "add": "+ Add Employee"
       },
       "form": {
-        "newTitle": "New Staff Member",
+        "newTitle": "New Employee",
         "editTitle": "Edit",
         "fullName": "Full Name",
         "phone": "Phone",
         "specialization": "Specialization"
       },
       "confirm": {
-        "delete": "Delete staff member?"
+        "delete": "Delete employee?"
       },
-      "empty": "No staff yet"
+      "empty": "No employees yet"
     },
     "productions": {
       "title": "Production",
@@ -269,6 +309,15 @@
     },
     "products": {
       "title": "Products",
+      "stagesTitle": "🛠 Assembly Stages (Routing Map)",
+      "materialsTitle": "📦 Product Materials",
+      "stageEmpty": "Stages are not configured (Frame will be created by default)",
+      "selectStage": "— Select Stage —",
+      "addStage": "+ Add Stage",
+      "order": "Order",
+      "stageUse": "Stage of use",
+      "forWhichStage": "— For which stage? —",
+      "bindMaterial": "+ Bind Material",
       "buttons": {
         "add": "+ Add Product",
         "create": "Create Product",
@@ -280,7 +329,7 @@
         "editTitle": "Edit Product",
         "name": "Product Name",
         "namePlaceholder": "Milan Sofa, Classic Kitchen...",
-        "price": "Sale Price (UZS)",
+        "price": "Selling Price (UZS)",
         "selectMaterial": "— Select Material —"
       },
       "table": {
@@ -300,9 +349,19 @@
     "reports": {
       "title": "Reports",
       "tabs": {
-        "materials": "📦 Material Flow",
-        "profit": "💰 Profit by Products",
-        "contracts": "📋 Contracts Statistics"
+        "materials": "📦 Material Movements",
+        "profit": "💰 Product Profit",
+        "contracts": "📋 Contract Statistics",
+        "salaries": "💳 Salaries"
+      },
+      "salaries": {
+        "totalFund": "Total Paid Payroll",
+        "table": {
+          "worker": "Employee",
+          "specialization": "Specialization",
+          "completedProducts": "Completed Products",
+          "totalEarned": "Total Earned"
+        }
       },
       "materials": {
         "writeOffs": "Write-offs",
@@ -320,12 +379,16 @@
       },
       "profit": {
         "productsProduced": "Products Produced",
-        "totalRevenue": "Total Revenue",
+        "totalRevenue": "Total Revenue (100%)",
+        "netProfit": "Net Profit (10%)",
         "table": {
           "product": "Product",
-          "price": "Sale Price",
-          "count": "Production Count",
-          "revenue": "Revenue"
+          "price": "Selling Price",
+          "count": "Qty",
+          "revenue": "Revenue (100%)",
+          "labor": "Payroll (45%)",
+          "expenses": "Expenses (45%)",
+          "netProfit": "Profit (10%)"
         }
       },
       "contracts": {
@@ -343,7 +406,7 @@
       "empty": "No data"
     },
     "supply": {
-      "title": "Material Supply",
+      "title": "Material Supplies",
       "buttons": {
         "new": "+ New Supply",
         "submit": "Accept Supply"
@@ -352,11 +415,11 @@
         "title": "Accept Supply",
         "material": "Material",
         "selectMaterial": "— Select Material —",
-        "stock": "(stock: {{quantity}} {{unit}})",
+        "stock": "(in stock: {{quantity}} {{unit}})",
         "quantity": "Quantity",
         "quantityPlaceholder": "Enter quantity",
         "comment": "Comment (supplier, invoice)",
-        "commentPlaceholder": "Supplier Akhmadov, invoice #123"
+        "commentPlaceholder": "Supplier Ahmadov, invoice #123"
       },
       "table": {
         "date": "Date",
