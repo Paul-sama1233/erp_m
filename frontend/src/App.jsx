@@ -17,6 +17,8 @@ import WorkerHome     from './pages/worker/WorkerHome';
 import WorkerTasks    from './pages/worker/WorkerTasks';
 import WorkerCalendar from './pages/worker/WorkerCalendar';
 import { I18nextProvider } from 'react-i18next';
+import ProductDetail from './pages/admin/ProductDetail';
+import PersonDetail from './pages/admin/PersonDetail';
 import i18n from './i18n';
 
 // === Компонент для обработки корневого маршрута (/) ===
@@ -55,10 +57,12 @@ export default function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="materials" element={<Materials />} />
               <Route path="products" element={<Products />} />
+              <Route path="products/:id" element={<ProductDetail />} />
+              <Route path="persons" element={<Persons />} />
+              <Route path="persons/:id" element={<PersonDetail />} />
               <Route path="productions" element={<Productions />} />
               <Route path="contracts" element={<Contracts />} />
               <Route path="supply" element={<Supply />} />
-              <Route path="persons" element={<Persons />} />
               <Route path="reports" element={<Reports />} />
             </Route>
 

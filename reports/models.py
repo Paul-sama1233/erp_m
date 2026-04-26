@@ -60,3 +60,18 @@ class WorkerSalary(models.Model):
 
     def __str__(self):
         return f"{self.worker.full_name} -> {self.amount}"
+
+class MonthlyOverhead(models.Model):
+        # Уникальность по месяцу, чтобы не ввели аренду дважды за май
+        month = models.DateField(unique=True, verbose_name="Месяц (указывайте 1-е число)")
+        rent_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Аренда")
+        utilities_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0,
+                                               verbose_name="ЖКХ + Интернет")
+
+        class Meta:
+            verbose_name = "Общие расходы"
+            verbose_name_plural = "Общие расходы"
+            ordering = ['-month']  # Самые свежие расходы сверху
+
+        def __str__(self):
+            return f"Расходы за {self.month.strftime('%m.%Y')}"

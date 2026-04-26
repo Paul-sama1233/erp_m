@@ -1,9 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-from contracts.views import generate_contract_pdf
+from contracts.views import generate_contract_pdf # Новый импорт для генерации договоров
 from contracts.views import ValidateAddressLocationIQView
-from .views import SalaryReportView
 
 # Импортируем все существующие views
 from .views import (
@@ -13,11 +12,11 @@ from .views import (
     PersonViewSet, ProductionViewSet, ProductionStageViewSet,
     ContractViewSet, ContractProductViewSet,
     MyStagesView, DashboardStatsView, StageActionView, ProductStageTemplateViewSet,
-    WorkerStatsView, SalaryReportView
+    WorkerStatsView, SalaryReportView,
+    FinancialReportView
 )
 
-# Новый импорт для генерации договоров
-from contracts.views import generate_contract_pdf
+
 
 router = DefaultRouter()
 router.register(r'materials', MaterialViewSet)
@@ -42,7 +41,7 @@ urlpatterns = [
     path('my-stages/', MyStagesView.as_view()),
     path('dashboard-stats/', DashboardStatsView.as_view()),
     path('stages/<int:pk>/<str:action>/', StageActionView.as_view()),
-
+    path('reports/finance/', FinancialReportView.as_view()),
     # === Новые пути для генерации договоров ===
     path('contracts/<int:contract_id>/generate/pdf/',
          generate_contract_pdf, name=' generate_contract_pdf'),

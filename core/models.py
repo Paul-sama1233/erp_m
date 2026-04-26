@@ -67,11 +67,18 @@ class Specialization(models.Model):
 class Person(models.Model):
     full_name       = models.CharField(max_length=255, verbose_name="ФИО")
     phone           = models.CharField(max_length=50, blank=True)
+    address = models.TextField(blank=True, verbose_name="Адрес проживания")
     specialization = models.CharField(
         max_length=20,
         choices=Specialization.CHOICES,  # берём из существующей модели
         default='none',
         verbose_name="Специализация"
+    )
+    photo = models.ImageField(upload_to='staff/', null=True, blank=True, verbose_name="Фото сотрудника")
+    language = models.CharField(
+        max_length=5,
+        choices=[('ru', 'Русский'), ('en', 'English'), ('uz', 'Oʻzbek')],
+        default='ru'
     )
 
     # Оставляем ManyToMany на будущее (если понадобится несколько специализаций)

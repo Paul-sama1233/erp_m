@@ -1,25 +1,24 @@
 import requests
 from django.db import transaction
 from decimal import Decimal, InvalidOperation
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, F
 from django.conf import settings
-from django.utils import timezone
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from core.models import CustomUser, Production, ProductionStage, Person
-from rest_framework.decorators import action
 from rest_framework import status
 from django.db import models as django_models
 from django.db.models import F
 from datetime import timedelta
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.db.models import ProtectedError
 from inventory.models import Material, MaterialTransaction, Product, ProductMaterial, PurchaseRequest, ProductStageTemplate
 from contracts.models import Contract, ContractProduct
 from .serializers import ProductStageTemplateSerializer
 from django.utils import timezone
-from reports.models import WorkerSalary
+from reports.models import WorkerSalary, MonthlyOverhead
 from datetime import datetime
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer,
@@ -91,6 +90,35 @@ class PersonViewSet(viewsets.ModelViewSet):
     serializer_class = PersonSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+    @action(detail=True, methods=['get'])
+    def finance(self, request, pk=None):
+        person = self.get_object()
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        salaries = WorkerSalary.objects.filter(worker=person).order_by('-created_at')
+
+        if start_date:
+            salaries = salaries.filter(created_at__date__gte=start_date)
+        if end_date:
+            salaries = salaries.filter(created_at__date__lte=end_date)
+
+        total = sum(s.amount for s in salaries)
+
+        history = []
+        for s in salaries:
+            history.append({
+                'id': s.id,
+                'product_name': s.production.product.name,
+                'amount': s.amount,
+                'date': s.created_at
+            })
+
+        return Response({
+            'total_earned': total,
+            'operations_count': salaries.count(),
+            'history': history
+        })
 
 class ProductionViewSet(viewsets.ModelViewSet):
     queryset = Production.objects.all().order_by('-created_at')
@@ -710,3 +738,63 @@ class SalaryReportView(APIView):
         ).order_by('-total_earned')
 
         return Response(list(stats))
+
+
+class FinancialReportView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Берем только завершенные производства
+        productions = Production.objects.filter(status='completed').order_by('-created_at')
+
+        data = []
+        for prod in productions:
+            # 1. Стоимость списанных материалов
+            mat_cost_dict = MaterialTransaction.objects.filter(
+                comment__icontains=f"производства #{prod.id}",
+                transaction_type='out'
+            ).aggregate(total=Sum(F('quantity') * F('material__price_per_unit')))
+            material_cost = mat_cost_dict['total'] or Decimal('0')
+
+            # 2. Зарплата (ФОТ) по этому изделию
+            sal_cost_dict = WorkerSalary.objects.filter(production=prod).aggregate(total=Sum('amount'))
+            salary_cost = sal_cost_dict['total'] or Decimal('0')
+
+            # 3. Расходы на Аренду и ЖКХ (доля)
+            overhead = MonthlyOverhead.objects.filter(
+                month__year=prod.created_at.year,
+                month__month=prod.created_at.month
+            ).first()
+
+            rent_share = Decimal('0')
+            if overhead:
+                # Считаем, сколько всего заказов завершено в этом месяце
+                total_orders = Production.objects.filter(
+                    created_at__year=prod.created_at.year,
+                    created_at__month=prod.created_at.month,
+                    status='completed'
+                ).count()
+
+                if total_orders > 0:
+                    rent_share = (overhead.rent_amount + overhead.utilities_amount) / Decimal(total_orders)
+
+            # 4. Налоги (пока ставим 5% от цены изделия, как заглушку)
+            price = prod.product.price
+            tax = price * Decimal('0.05')
+
+            # 5. Чистая прибыль
+            net_profit = price - (material_cost + salary_cost + rent_share + tax)
+
+            data.append({
+                'id': prod.id,
+                'product_name': prod.product.name,
+                'date': prod.created_at,
+                'price': price,
+                'material_cost': material_cost,
+                'salary_cost': salary_cost,
+                'rent_share': rent_share,
+                'tax': tax,
+                'net_profit': net_profit
+            })
+
+        return Response(data)

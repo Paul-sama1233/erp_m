@@ -9,6 +9,7 @@ from contracts.models import Contract, ContractProduct
 class ContractProductSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
 
+
     class Meta:
         model = ContractProduct
         fields = ['id', 'contract', 'product', 'product_name',
@@ -51,7 +52,7 @@ class MaterialTransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = MaterialTransaction
         fields = ['id', 'material', 'material_name', 'quantity',
-                  'transaction_type', 'comment', 'created_at']
+                  'transaction_type', 'comment', 'created_at', 'price_per_unit', 'total_cost']
 class ProductMaterialSerializer(serializers.ModelSerializer):
     material_name = serializers.CharField(source='material.name', read_only=True)
     material_unit = serializers.CharField(source='material.unit', read_only=True)
@@ -73,7 +74,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'created_at', 'materials', 'stage_templates']
+        fields = ['id', 'name', 'price', 'created_at', 'materials',
+                  'stage_templates','image']
 
 class ProductionStageSerializer(serializers.ModelSerializer):
     assigned_worker_name = serializers.CharField(
@@ -118,8 +120,9 @@ class PersonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Person
-        fields = ['id', 'full_name', 'phone', 'specialization','specialization_label',
-                  'username', 'password', 'login']
+        fields = ['id', 'full_name', 'phone','address', 'specialization',
+                  'specialization_label','username', 'password',
+                  'login', 'photo', 'language']
 
     def get_login(self, obj):
         # Ищем связанный аккаунт пользователя (CustomUser)
@@ -159,6 +162,13 @@ class PersonSerializer(serializers.ModelSerializer):
         instance.full_name = validated_data.get('full_name', instance.full_name)
         instance.phone = validated_data.get('phone', instance.phone)
         instance.specialization = validated_data.get('specialization', instance.specialization)
+
+        instance.address = validated_data.get('address', instance.address)
+        if 'language' in validated_data:
+            instance.language = validated_data['language']
+        if 'photo' in validated_data:
+            instance.photo = validated_data['photo']
+
         instance.save()
 
         # 2. Обновляем системный аккаунт (логин, пароль и привязку)
@@ -171,7 +181,7 @@ class PersonSerializer(serializers.ModelSerializer):
             user.specialization = instance.specialization
             user.save()
         elif username and password:
-            # Если аккаунта не было, но при редактировании админ решил его задать
+            # УБРАЛИ локальный import CustomUser
             CustomUser.objects.create_user(
                 username=username,
                 password=password,

@@ -40,7 +40,11 @@ class MaterialTransaction(models.Model):
     comment = models.TextField(blank=True, verbose_name="Комментарий")
     person = models.ForeignKey(Person, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Сотрудник")
     created_at = models.DateTimeField(auto_now_add=True)
-
+    price_per_unit = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+                                         verbose_name="Цена за единицу")
+    total_cost = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+                                     verbose_name="Общая стоимость")
+    
     class Meta:
         verbose_name = "Транзакция материала"
         verbose_name_plural = "Транзакции материалов"
@@ -53,6 +57,7 @@ class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Название изделия")
     price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Цена продажи")
     created_at = models.DateTimeField(auto_now_add=True)
+    image = models.ImageField(upload_to='products/', null=True, blank=True, verbose_name="Изображение изделия")
 
     class Meta:
         verbose_name = "Изделие"
