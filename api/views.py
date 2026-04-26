@@ -39,7 +39,27 @@ class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        return Response(UserSerializer(request.user).data)
+        user = request.user
+        # Важно: находим Person, связанный с этим пользователем
+        person = Person.objects.filter(full_name=user.first_name).first()
+
+        data = UserSerializer(user).data
+        data['person_id'] = person.id if person else None
+        data['language'] = person.language if person else 'ru'  # Отдаем сохраненный язык
+        return Response(data)
+
+    def patch(self, request):
+        user = request.user
+        new_lang = request.data.get('language')
+
+        # Находим Person и сохраняем язык именно туда
+        person = Person.objects.filter(full_name=user.first_name).first()
+        if person and new_lang in ['ru', 'uz', 'en']:
+            person.language = new_lang
+            person.save()
+            return Response({"status": "success", "language": person.language})
+
+        return Response({"status": "error", "message": "Person not found"}, status=404)
 
 
 class IsAdmin(permissions.BasePermission):

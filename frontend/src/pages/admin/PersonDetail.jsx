@@ -13,7 +13,7 @@ export default function PersonDetail() {
   const [activeTab, setActiveTab] = useState('profile');
   const [form, setForm] = useState({});
   const [loading, setLoading] = useState(true);
-  const [previewPhoto, setPreviewPhoto] = useState(null); // Состояние для предпросмотра
+  const [previewPhoto, setPreviewPhoto] = useState(null);
 
   // Финансы
   const [dates, setDates] = useState({ start: '', end: '' });
@@ -32,8 +32,8 @@ export default function PersonDetail() {
         username: res.data.login || '',
         password: '',
         language: res.data.language || 'ru',
-        photoUrl: res.data.photo || null, // Сохраняем URL из БД
-        newPhotoFile: null // Файл для отправки
+        photoUrl: res.data.photo || null,
+        newPhotoFile: null
       });
       setPreviewPhoto(res.data.photo || null);
       setLoading(false);
@@ -49,7 +49,7 @@ export default function PersonDetail() {
     const file = e.target.files[0];
     if (file) {
       setForm({ ...form, newPhotoFile: file });
-      setPreviewPhoto(URL.createObjectURL(file)); // Создаем временный URL для превью
+      setPreviewPhoto(URL.createObjectURL(file));
     }
   };
 
@@ -93,7 +93,6 @@ export default function PersonDetail() {
     } catch (err) { alert(t('common.error')); }
   };
 
-  // --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ВЫГРУЗКИ ---
   const exportToCSV = () => {
     if (!financeData || !financeData.history || financeData.history.length === 0) {
       alert('Нет данных для скачивания!');
@@ -126,7 +125,6 @@ export default function PersonDetail() {
     const link = document.createElement('a');
     link.href = url;
 
-    // Безопасное формирование имени файла (заменяем пробелы на подчеркивания)
     const safeName = form.full_name ? form.full_name.replace(/\s+/g, '_') : 'Сотрудник';
     const startDateStr = dates.start ? dates.start : 'все_время';
     const endDateStr = dates.end ? dates.end : 'по_сегодня';
@@ -155,7 +153,6 @@ export default function PersonDetail() {
       {activeTab === 'profile' && (
         <form onSubmit={handleProfileSubmit} style={s.contentBlock}>
           <div style={s.profileGrid}>
-            {/* Левая колонка - Фото */}
             <div style={s.photoSection}>
               <div style={s.photoPreview}>
                 {previewPhoto ? <img src={previewPhoto} alt="Preview" style={s.image} /> : <div style={s.noPhoto}>Нет фото</div>}
@@ -166,7 +163,6 @@ export default function PersonDetail() {
               </label>
             </div>
 
-            {/* Правая колонка - Данные */}
             <div style={s.dataSection}>
               <div style={s.fieldGroup}>
                 <label style={s.label}>ФИО</label>
@@ -198,14 +194,6 @@ export default function PersonDetail() {
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                 <div style={s.fieldGroup}>
-                  <label style={s.label}>Тип языка</label>
-                  <select style={s.input} value={form.language} onChange={e => setForm({...form, language: e.target.value})}>
-                    <option value="ru">Русский (RU)</option>
-                    <option value="uz">O'zbek (UZ)</option>
-                    <option value="en">English (EN)</option>
-                  </select>
-                </div>
-                <div style={s.fieldGroup}>
                   <label style={s.label}>Логин</label>
                   <input style={s.input} required value={form.username} onChange={e => setForm({...form, username: e.target.value})} />
                 </div>
@@ -232,7 +220,6 @@ export default function PersonDetail() {
             <input style={s.input} type="date" value={dates.end} onChange={e => setDates({...dates, end: e.target.value})} />
             <button style={s.calcBtn} onClick={fetchFinance}>Рассчитать</button>
 
-            {/* КНОПКА СКАЧИВАНИЯ (ПОЯВЛЯЕТСЯ ТОЛЬКО ПРИ НАЛИЧИИ ДАННЫХ) */}
             {financeData && financeData.history.length > 0 && (
               <button
                 style={{...s.calcBtn, background: '#4f46e5', marginLeft: 'auto'}}
@@ -244,44 +231,75 @@ export default function PersonDetail() {
           </div>
 
           {financeData ? (
-            <table style={s.table}>
-              <thead>
-                <tr style={s.thead}>
-                  <th style={s.th}>Изделие</th>
-                  <th style={s.th}>Начислено (Gross)</th>
-                  <th style={s.th}>НДФЛ (12%)</th>
-                  <th style={s.th}>На руки (Net)</th>
-                  <th style={s.th}>Соц. налог (12% от предпр.)</th>
-                  <th style={s.th}>Дата</th>
-                </tr>
-              </thead>
-              <tbody>
-                {financeData.history.length === 0 && (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '30px', color: '#888' }}>
-                      Данных за выбранный период не найдено
-                    </td>
-                  </tr>
-                )}
-                {financeData.history.map(row => {
-                  const gross = parseFloat(row.amount);
-                  const ndfl = gross * 0.12;
-                  const netPay = gross - ndfl;
-                  const socialTax = gross * 0.12; // Платит предприятие сверху
+            <>
+              {/* СВОДНЫЕ КАРТОЧКИ (ИТОГО ЗА ПЕРИОД) */}
+              {financeData.history.length > 0 && (() => {
+                const totalGross = financeData.history.reduce((sum, row) => sum + parseFloat(row.amount), 0);
+                const totalNdfl = totalGross * 0.12;
+                const totalNet = totalGross - totalNdfl;
+                const totalSocial = totalGross * 0.12;
 
-                  return (
-                    <tr key={row.id} style={s.tr}>
-                      <td style={s.td}><strong>{row.product_name}</strong></td>
-                      <td style={s.td}>{gross.toLocaleString()} сум</td>
-                      <td style={s.td}><span style={{ color: '#ef4444' }}>-{ndfl.toLocaleString()}</span></td>
-                      <td style={s.td}><strong style={{ color: '#16a34a' }}>{netPay.toLocaleString()} сум</strong></td>
-                      <td style={s.td}><span style={{ color: '#f59e0b' }}>{socialTax.toLocaleString()}</span></td>
-                      <td style={s.td}>{new Date(row.date).toLocaleDateString('ru-RU')}</td>
+                return (
+                  <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+                    <div style={{ ...s.summaryCard, borderTop: '4px solid #4f46e5' }}>
+                      <div style={s.summaryLabel}>Начислено (Грязными)</div>
+                      <div style={{ ...s.summaryNum, color: '#1f2937' }}>{totalGross.toLocaleString()} сум</div>
+                    </div>
+                    <div style={{ ...s.summaryCard, borderTop: '4px solid #16a34a' }}>
+                      <div style={s.summaryLabel}>На руки (Чистыми)</div>
+                      <div style={{ ...s.summaryNum, color: '#16a34a' }}>{totalNet.toLocaleString()} сум</div>
+                    </div>
+                    <div style={{ ...s.summaryCard, borderTop: '4px solid #ef4444' }}>
+                      <div style={s.summaryLabel}>Удержано НДФЛ (12%)</div>
+                      <div style={{ ...s.summaryNum, color: '#ef4444' }}>{totalNdfl.toLocaleString()} сум</div>
+                    </div>
+                    <div style={{ ...s.summaryCard, borderTop: '4px solid #f59e0b' }}>
+                      <div style={s.summaryLabel}>Соц. налог (от фирмы)</div>
+                      <div style={{ ...s.summaryNum, color: '#f59e0b' }}>{totalSocial.toLocaleString()} сум</div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <table style={s.table}>
+                <thead>
+                  <tr style={s.thead}>
+                    <th style={s.th}>Изделие</th>
+                    <th style={s.th}>Начислено (Gross)</th>
+                    <th style={s.th}>НДФЛ (12%)</th>
+                    <th style={s.th}>Чистая ЗП</th>
+                    <th style={s.th}>Соц. налог (12%)</th>
+                    <th style={s.th}>Дата</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {financeData.history.length === 0 && (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '30px', color: '#888' }}>
+                        Данных за выбранный период не найдено
+                      </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  )}
+                  {financeData.history.map(row => {
+                    const gross = parseFloat(row.amount);
+                    const ndfl = gross * 0.12;
+                    const netPay = gross - ndfl;
+                    const socialTax = gross * 0.12;
+
+                    return (
+                      <tr key={row.id} style={s.tr}>
+                        <td style={s.td}><strong>{row.product_name}</strong></td>
+                        <td style={s.td}>{gross.toLocaleString()} сум</td>
+                        <td style={s.td}><span style={{ color: '#ef4444' }}>-{ndfl.toLocaleString()}</span></td>
+                        <td style={s.td}><strong style={{ color: '#16a34a' }}>{netPay.toLocaleString()} сум</strong></td>
+                        <td style={s.td}><span style={{ color: '#f59e0b' }}>{socialTax.toLocaleString()}</span></td>
+                        <td style={s.td}>{new Date(row.date).toLocaleDateString('ru-RU')}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
           ) : (
             <p style={{ color: '#888', padding: 20 }}>Выберите период и нажмите "Рассчитать"</p>
           )}
@@ -320,6 +338,11 @@ const s = {
 
   filterRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 },
   calcBtn: { background: '#10b981', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 },
+
+  // Стили для карточек "Итого"
+  summaryCard: { flex: 1, background: '#fff', borderRadius: 12, padding: '16px 20px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #f3f4f6' },
+  summaryLabel:{ color: '#6b7280', fontSize: 13, marginBottom: 8, fontWeight: 600 },
+  summaryNum:  { fontSize: 20, fontWeight: 800 },
 
   table: { width: '100%', borderCollapse: 'collapse' },
   thead: { background: '#f8fafc' },

@@ -1,97 +1,146 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react'; // Добавили useEffect в импорт
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const { login } = useAuth();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
 
-  const [form, setForm]     = useState({ username: '', password: '' });
-  const [error, setError]   = useState('');
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.backgroundColor = "#171717";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.margin = "";
+      document.body.style.padding = "";
+      document.body.style.backgroundColor = "";
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const user = await login(form.username, form.password);
-      // Редирект по роли
-      if (user.role === 'admin') navigate('/admin/dashboard');
-      else navigate('/worker/dashboard');
-    } catch {
-      setError('Неверный логин или пароль');
-    } finally {
-      setLoading(false);
-    }
+    const success = await login(username, password);
+    if (success) navigate('/');
+    else alert('Неверный логин или пароль');
   };
 
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Wallman ERP</h2>
-        <p style={styles.subtitle}>Войдите в систему</p>
+    <div style={s.container}>
+      <div style={s.card}>
+        <div style={s.logo}>Wallman</div>
+        <h2 style={s.title}>Вход в систему</h2>
+        <p style={s.subtitle}>Управляйте производством эффективно</p>
 
-        <form onSubmit={handleSubmit}>
-          <div style={styles.field}>
-            <label style={styles.label}>Логин</label>
+        <form onSubmit={handleSubmit} style={s.form}>
+          <div style={s.field}>
+            <label style={s.label}>Логин</label>
             <input
-              style={styles.input}
+              style={s.input}
               type="text"
-              value={form.username}
-              onChange={e => setForm({ ...form, username: e.target.value })}
-              placeholder="Введите логин"
+              placeholder="Введите ваш логин"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Пароль</label>
+          <div style={s.field}>
+            <label style={s.label}>Пароль</label>
             <input
-              style={styles.input}
+              style={s.input}
               type="password"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })}
-              placeholder="Введите пароль"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
 
-          {error && <p style={styles.error}>{error}</p>}
-
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? 'Вход...' : 'Войти'}
-          </button>
+          <button type="submit" style={s.button}>Войти</button>
         </form>
       </div>
     </div>
   );
 }
 
-const styles = {
-  wrapper: {
-    minHeight: '100vh', display: 'flex',
-    alignItems: 'center', justifyContent: 'center',
-    background: '#f0f2f5',
+const s = {
+  container: {
+    height: '100vh',
+    width: '100vw',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: '#171717',
+    margin: 0,
+    padding: 0
   },
   card: {
-    background: '#fff', padding: '40px',
-    borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-    width: '100%', maxWidth: '400px',
+    background: '#ffffff',
+    padding: '48px 40px',
+    borderRadius: '28px',
+    width: '100%',
+    maxWidth: '420px',
+    textAlign: 'center',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
   },
-  title:    { margin: 0, fontSize: '24px', fontWeight: 700, color: '#1a1a2e' },
-  subtitle: { color: '#888', marginBottom: '28px' },
-  field:    { marginBottom: '16px' },
-  label:    { display: 'block', marginBottom: '6px', fontWeight: 500, color: '#444' },
+  logo: {
+    fontFamily: 'serif',
+    fontSize: '32px',
+    fontWeight: '800',
+    color: '#1e1b4b',
+    marginBottom: '10px'
+  },
+  title: {
+    fontSize: '22px',
+    fontWeight: '700',
+    color: '#1e293b',
+    margin: '0 0 8px 0'
+  },
+  subtitle: {
+    fontSize: '14px',
+    color: '#94a3b8',
+    marginBottom: '36px'
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '24px',
+    textAlign: 'left'
+  },
+  field: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px'
+  },
+  label: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#475569'
+  },
   input: {
-    width: '100%', padding: '10px 12px', borderRadius: '8px',
-    border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box',
+    padding: '14px 16px',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+    fontSize: '15px',
     outline: 'none',
+    background: '#fff'
   },
   button: {
-    width: '100%', padding: '12px', borderRadius: '8px',
-    background: '#4f46e5', color: '#fff', border: 'none',
-    fontSize: '16px', fontWeight: 600, cursor: 'pointer', marginTop: '8px',
-  },
-  error: { color: '#e53e3e', fontSize: '14px', marginBottom: '8px' },
+    padding: '16px',
+    borderRadius: '14px',
+    border: 'none',
+    background: '#bef264',
+    color: '#64748b',
+    fontSize: '16px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    marginTop: '10px',
+    boxShadow: '0 4px 15px rgba(190, 242, 100, 0.3)',
+    transition: '0.2s'
+  }
 };

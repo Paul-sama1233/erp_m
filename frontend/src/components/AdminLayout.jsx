@@ -73,7 +73,7 @@ export default function AdminLayout() {
               <div style={s.role}>{t('admin.layout.role')}</div>
             </div>
             <button style={s.logoutBtn} onClick={() => { logout(); navigate('/login'); }} title={t('admin.layout.buttons.logout')}>
-              🚪
+              Выйти
             </button>
           </div>
         </div>
@@ -96,11 +96,11 @@ const s = {
   bottom:        { padding: '0 16px', marginTop: 'auto' },
   langSwitcher:  { marginBottom: 16 },
   langSelect:    { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: '#ffffff', fontSize: 13, cursor: 'pointer', outline: 'none' },
-  userBlock:     { display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 16 },
+  userBlock:     {display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16},
   avatar:        { width: 36, height: 36, borderRadius: '50%', background: 'var(--sidebar-active, #65a30d)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, flexShrink: 0 },
   userInfo:      { flex: 1, overflow: 'hidden' },
   username:      { color: '#ffffff', fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' },
   role:          { color: 'rgba(255,255,255,0.5)', fontSize: 12, marginTop: 2 },
-  logoutBtn:     { background: 'transparent', border: 'none', color: '#ffffff', fontSize: 18, cursor: 'pointer', padding: 4, opacity: 0.7 },
+  logoutBtn:     {width: '100%', padding: '10px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)', cursor: 'pointer', fontSize: '13px', fontWeight: 600, transition: '0.2s', textAlign: 'center'},
   main:          { flex: 1, marginLeft: 240, minHeight: '100vh', paddingBottom: 40 }
 };
