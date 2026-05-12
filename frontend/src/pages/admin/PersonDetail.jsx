@@ -265,9 +265,9 @@ export default function PersonDetail() {
                 <thead>
                   <tr style={s.thead}>
                     <th style={s.th}>Изделие</th>
-                    <th style={s.th}>Начислено (Gross)</th>
+                    <th style={s.th}>Грязные</th>
                     <th style={s.th}>НДФЛ (12%)</th>
-                    <th style={s.th}>Чистая ЗП</th>
+                    <th style={s.th}>ЗП с налогами</th>
                     <th style={s.th}>Соц. налог (12%)</th>
                     <th style={s.th}>Дата</th>
                   </tr>

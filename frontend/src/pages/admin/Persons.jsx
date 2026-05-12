@@ -35,22 +35,41 @@ export default function Persons() {
 
   useEffect(() => { fetchPersons(); }, []);
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    Object.keys(form).forEach(key => {
-      if (form[key] !== null) formData.append(key, form[key]);
-    });
+
+    // Вручную добавляем только текстовые поля
+    formData.append('full_name', form.full_name);
+    formData.append('username', form.username);
+    formData.append('password', form.password);
+    formData.append('specialization', form.specialization || 'none');
+    formData.append('language', form.language || 'ru');
+
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: добавляем фото ТОЛЬКО если это реальный файл
+    if (form.photo && form.photo instanceof File) {
+      formData.append('photo', form.photo);
+    }
 
     try {
       const res = await axios.post(`${API}/api/persons/`, formData, {
         headers: { ...headers, 'Content-Type': 'multipart/form-data' }
       });
       setShowAddForm(false);
-      // После успешного создания сразу "проваливаемся" в личное дело
       navigate(`/admin/persons/${res.data.id}`);
     } catch (err) {
-      alert(err.response?.data?.username ? "Этот логин уже занят!" : t('common.error'));
+      // Выводим детальную ошибку в консоль браузера
+      console.error("Детали ошибки от сервера:", err.response?.data);
+
+      // Выводим понятный Alert
+      const errorData = err.response?.data;
+      if (errorData?.username) {
+        alert("Ошибка: Этот логин уже занят!");
+      } else if (errorData) {
+        alert("Ошибка сервера: " + JSON.stringify(errorData));
+      } else {
+        alert("Произошла неизвестная ошибка");
+      }
     }
   };
 

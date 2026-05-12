@@ -10,7 +10,6 @@ const menuItems = [
   { path: '/worker/dashboard', key: 'dashboard', label: 'Главная', icon: '📊' },
   { path: '/worker/tasks',     key: 'tasks',     label: 'Задачи',  icon: '🪑' },
   { path: '/worker/calendar',  key: 'calendar',  label: 'Календарь', icon: '📅' },
-  { path: '/worker/profile',   key: 'profile',   label: 'Зарплата', icon: '💰' },
 ];
 
 export default function WorkerLayout() {
@@ -142,7 +141,7 @@ const s = {
 
   // СТИЛЬ АКТИВНОГО (ВЫБРАННОГО) ПУНКТА МЕНЮ - САЛАТОВЫЙ
   navItemActive: {
-    background: '#84cc16', // Салатовый цвет
+    background: '#84bb16', // Салатовый цвет
     color: '#ffffff',      // Белый текст
     fontWeight: 600,
     boxShadow: '0 4px 12px rgba(132,204,22,0.25)'

@@ -58,6 +58,7 @@ class Specialization(models.Model):
         ('sewing',     'Швея'),
         ('foam',       'Поролонщик'),
         ('upholstery', 'Обивщик'),
+        ('none',       'Без специализации'),
     ]
     code = models.CharField(max_length=20, choices=CHOICES, unique=True)
 

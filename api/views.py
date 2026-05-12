@@ -358,27 +358,28 @@ class ContractProductViewSet(viewsets.ModelViewSet):
     def start_production(self, request, pk=None):
         contract_item = self.get_object()
 
-        # Теперь блокируем только если заказ ПОЛНОСТЬЮ завершен
         if contract_item.status == 'completed':
             return Response({'error': 'Эта позиция уже завершена.'}, status=400)
 
         with transaction.atomic():
             start_date = timezone.now()
 
+            total_required = ContractProduct.objects.filter(
+                contract=contract_item.contract,
+                product=contract_item.product
+            ).aggregate(total=Sum('quantity'))['total'] or 0
+
             already_started = Production.objects.filter(
                 contract=contract_item.contract,
                 product=contract_item.product
             ).count()
 
-            # Жесткий контроль количества (защита от лишних кликов)
-            if already_started >= contract_item.quantity:
-                # Если статус забыл обновиться, поправляем
+            if already_started >= total_required:
                 if contract_item.status == 'pending':
                     contract_item.status = 'in_progress'
                     contract_item.save()
                 return Response({'error': 'Все изделия по этой позиции уже запущены.'}, status=400)
 
-            # Создаем ОДНО производство
             production = Production.objects.create(
                 product=contract_item.product,
                 contract=contract_item.contract,
@@ -386,7 +387,6 @@ class ContractProductViewSet(viewsets.ModelViewSet):
                 current_stage_order=0
             )
 
-            # Генерируем этапы
             templates = contract_item.product.stage_templates.all().order_by('order')
             if templates.exists():
                 for i, template in enumerate(templates, start=1):
@@ -410,7 +410,6 @@ class ContractProductViewSet(viewsets.ModelViewSet):
                     deadline=start_date + timedelta(days=7)
                 )
 
-            # Обновляем статус заказа в договоре, чтобы было понятно, что работа пошла
             if contract_item.status == 'pending':
                 contract_item.status = 'in_progress'
                 contract_item.save()

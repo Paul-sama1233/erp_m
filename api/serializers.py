@@ -135,18 +135,25 @@ class PersonSerializer(serializers.ModelSerializer):
         username = validated_data.pop('username', None)
         password = validated_data.pop('password', None)
 
-        # 1. Создаем карточку сотрудника
         person = Person.objects.create(**validated_data)
 
-        # 2. Если админ ввел логин и пароль — создаем аккаунт для входа
         if username and password:
-            CustomUser.objects.create_user(
-                username=username,
-                password=password,
-                first_name=person.full_name,  # Связываем через ФИО для корректной авторизации рабочих
-                role='worker',
-                specialization=person.specialization
-            )
+            if CustomUser.objects.filter(username=username).exists():
+                person.delete()
+                raise serializers.ValidationError({"username": "Этот логин уже занят!"})
+
+            try:
+                CustomUser.objects.create_user(
+                    username=username,
+                    password=password,
+                    first_name=person.full_name,
+                    role='worker',
+                    specialization=person.specialization
+                )
+            except Exception as e:
+                person.delete()
+                raise serializers.ValidationError({"error": str(e)})
+
         return person
 
     def update(self, instance, validated_data):
